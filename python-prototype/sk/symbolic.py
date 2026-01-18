@@ -59,6 +59,13 @@ class SSymbolic:
         # operands must be SValue objects
         self.operands = operands
 
+        self._valid = False
+        self._cached_value = None
+
+        for op in operands:
+            if isinstance(op, SValue):
+                op.add_dependent(self)
+
     @property
     def kind(self):
         for op in self.operands:
@@ -95,6 +102,10 @@ class SSymbolic:
                 raise ValueError(f"Unknown operation: {self.expr}")
 
         return result
+    
+    def invalidate(self):
+        self._valid = False
+        self._cached_value = None
 
     # == operator overloads ==
     def __add__(self, other):

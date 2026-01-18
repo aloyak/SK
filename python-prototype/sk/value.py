@@ -5,6 +5,9 @@ class SValue:
         self.lower = lower
         self.higher = higher
 
+        # dependents to notify when value changes
+        self._dependents = set() 
+
         defined_count = sum(x is not None for x in (lower, higher))
 
         if defined_count == 0:
@@ -35,11 +38,13 @@ class SValue:
         self.lower = value
         self.higher = None
         self.kind = SKind.known
+        self._notify_dependents()
 
     def setUnknown(self):
         self.lower = None
         self.higher = None
         self.kind = SKind.unknown
+        self._notify_dependents()
 
     def setInterval(self, low, high):
         if low > high:
@@ -47,6 +52,7 @@ class SValue:
         self.lower = low
         self.higher = high
         self.kind = SKind.interval
+        self._notify_dependents()
 
     def __repr__(self):
         """Returns a string representation for easier debugging."""
@@ -71,6 +77,16 @@ class SValue:
         # Interval: both bounds exist here
         return SValue(-self.higher, -self.lower)
     
+    def add_dependent(self, symbolic):
+        self._dependents.add(symbolic)
+
+    def remove_dependent(self, symbolic):
+        self._dependents.discard(symbolic)
+
+    def _notify_dependents(self):
+        for sym in self._dependents:
+            sym.invalidate()  # mark symbolic as needing re-resolve
+
     # == operator overloads ==
     def __add__(self, other):
         from .ops import add

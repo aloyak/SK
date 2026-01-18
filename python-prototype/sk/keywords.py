@@ -25,3 +25,11 @@ def Const(obj): # supports only constant symbolic and constant quiet symbolic
         return SConstQuietSymbolic(obj.expr, obj.operands)
     else:
         raise TypeError(f"Const() not implemented for type {type(obj)}")
+    
+
+# Not the most efficent thing but will do for now
+def Strue():
+    return SValue(1)
+
+def Sfalse():
+    return SValue(0)
