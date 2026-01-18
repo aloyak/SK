@@ -190,7 +190,7 @@ class SValue:
         # Compare lower and higher with float/int tolerance
         return self.lower == other.lower and self.higher == other.higher
 
-#   span:
+#   sk:
 
 #   basic values
 #   x = [3..5]    => interval from 3 to 5

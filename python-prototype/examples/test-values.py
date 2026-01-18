@@ -1,4 +1,4 @@
-from span import *
+from sk import *
 
 x = Sunknown()          # SValue()
 y = Sknown(1)           # SValue(1)

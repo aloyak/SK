@@ -1,4 +1,4 @@
-from span import *
+from sk import *
 
 a = Sknown(2)
 b = Sunknown()

@@ -1,4 +1,4 @@
-from span import *
+from sk import *
 
 x = Sinterval(-8,16)
 y = Sknown(4)

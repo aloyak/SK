@@ -1,4 +1,4 @@
-from span import *
+from sk import *
 
 print(Sknown(0) ** Sknown(0))        # 1
 print(Sknown(0) ** Sknown(5))        # 0

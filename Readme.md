@@ -1,22 +1,22 @@
-# Span Programming Language
+# SK Programming Language
 > Name is susceptible to change!
 
 ## Overview
 
-Span is a conceptual programming language designed to handle incomplete, approximate, or partially known information as first-class entities. Unlike traditional languages, Span does **not assume all variables have exact values**. Instead, it tracks uncertainty explicitly throughout calculations, decisions, and control flow.  
+SK is a conceptual programming language designed to handle incomplete, approximate, or partially known information as first-class entities. Unlike traditional languages, SK does **not assume all variables have exact values**. Instead, it tracks uncertainty explicitly throughout calculations, decisions, and control flow.  
 
 The language is designed for **safer, more honest, and analyzable computation** in contexts where data may be noisy, incomplete, or evolving.
 
 ## Python Prototype
 
-For the moment, Span is implemented as a **Python-based prototype**. This allows experimenting with the core concepts of uncertain values, intervals, and symbolic expressions using Python classes and operator overloading. Variables such as `SValue`, `SSymbolic`, and their variants simulate the behavior of the language, while arithmetic operations automatically propagate uncertainty and generate symbolic expressions when operands are unknown or partially known. This approach provides a flexible environment to test and refine the semantics of Span before developing a full compiler or interpreter.
+For the moment, SK is implemented as a **Python-based prototype**. This allows experimenting with the core concepts of uncertain values, intervals, and symbolic expressions using Python classes and operator overloading. Variables such as `SValue`, `SSymbolic`, and their variants simulate the behavior of the language, while arithmetic operations automatically propagate uncertainty and generate symbolic expressions when operands are unknown or partially known. This approach provides a flexible environment to test and refine the semantics of SK before developing a full compiler or interpreter.
 
 
 ## Core Concepts
 
 ### 1. Values
 
-Span supports several kinds of values:
+SK supports several kinds of values:
 
 * **Known values** – exact, fully determined numbers or objects:
 
@@ -83,7 +83,7 @@ print(z.resolve()) // → 5
 ```
 
 ### 3 Symbolic Variables
-* Symbolics in Span represent arithmetic expressions over unknown or interval values. They are created automatically whenever an operation involves unknowns or other symbolics.
+* Symbolics in SK represent arithmetic expressions over unknown or interval values. They are created automatically whenever an operation involves unknowns or other symbolics.
 
 Creation:
 ```
@@ -136,7 +136,7 @@ if x > 0.5 {
     result = "low"
 }
 
-// Span merges both possibilities and produces
+// SK merges both possibilities and produces
 // result = ["low".."high"] = interval from low to high
 ```
 
@@ -151,14 +151,14 @@ fn addUp(n) {
 * Functions operate seamlessly on known, interval, unknown, and symbolic values.
 
 ### 6. Constraints (Proposed)
-* Future Span syntax may allow constraints on unknown values:
+* Future SK syntax may allow constraints on unknown values:
 ```js
 unknown x > 0        // x is unknown but positive
 unknown y % 2 == 0   // y is unknown but even
 ```
 
 ## Sumary
-Span makes unknown and partially known values first-class citizens. Calculations propagate uncertainty, and control flow respects partial knowledge.
+SK makes unknown and partially known values first-class citizens. Calculations propagate uncertainty, and control flow respects partial knowledge.
 
 * This allows developers to:
 * Write safer programs for uncertain environments
@@ -166,4 +166,4 @@ Span makes unknown and partially known values first-class citizens. Calculations
 * Produce explanations for derived values
 * Reason rigorously about partially known information
 
-Span transforms programming from assuming precision to honestly modeling knowledge and ignorance, enabling robust, intelligent systems.
+SK transforms programming from assuming precision to honestly modeling knowledge and ignorance, enabling robust, intelligent systems.

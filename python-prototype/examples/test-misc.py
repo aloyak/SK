@@ -1,4 +1,4 @@
-from span import *
+from sk import *
 
 x = SValue(0,3)
 print(x)

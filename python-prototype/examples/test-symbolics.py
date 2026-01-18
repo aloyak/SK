@@ -1,4 +1,4 @@
-from span import *
+from sk import *
 
 a = Sinterval(1,5)
 b = Sunknown()

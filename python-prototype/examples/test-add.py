@@ -1,4 +1,4 @@
-from span import *
+from sk import *
 
 print(Sinterval(1,2) - Sinterval(1,2))
 
