@@ -1,7 +1,10 @@
 import os
+import sys
 
-#examples = ["test-add","test-division","test-exponentiation","test-mult","test-values"]
-examples = ["test-symbolics"]
+if len(sys.argv) > 1:
+    examples = [f"test-{sys.argv[1]}"]
+else:
+    examples = ["test-symbolics"]
 clearOnStart = True
 
 if clearOnStart: os.system('cls' if os.name=='nt' else 'clear')

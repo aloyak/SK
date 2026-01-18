@@ -2,6 +2,57 @@ from .value import SValue
 from .kind import SKind
 from .ops import product, add, divide, power
 
+def simplify(expr, operands): # Simplifies trivial expressions for improved efficency!
+    # Flatten SSymbolic operands
+    operands = [op if not isinstance(op, SSymbolic) else op.resolve() for op in operands]
+
+    if expr == "add":
+        # remove 0s
+        operands = [op for op in operands if not (op.kind == SKind.known and op.lower == 0)]
+        if not operands:
+            return SValue(0)
+        if len(operands) == 1:
+            return operands[0]
+
+    elif expr == "sub":
+        if operands[1].kind == SKind.known and operands[1].lower == 0:
+            return operands[0]
+        if operands[0] == operands[1]:
+            return SValue(0)
+
+    elif expr == "mul":
+        for op in operands:
+            if op.kind == SKind.known and op.lower == 0:
+                return SValue(0)
+        # remove 1s
+        operands = [op for op in operands if not (op.kind == SKind.known and op.lower == 1)]
+        if len(operands) == 0:
+            return SValue(1)
+        if len(operands) == 1:
+            return operands[0]
+
+    elif expr == "div":
+        if operands[0].kind == SKind.known and operands[0].lower == 0:
+            return SValue(0)
+        if operands[1].kind == SKind.known and operands[1].lower == 1:
+            return operands[0]
+        if operands[0] == operands[1]:
+            return SValue(1)
+
+    elif expr == "pow":
+        if operands[1].kind == SKind.known and operands[1].lower == 0:
+            return SValue(1)
+        if operands[1].kind == SKind.known and operands[1].lower == 1:
+            return operands[0]
+        if operands[0].kind == SKind.known and operands[0].lower == 0:
+            return SValue(0)
+        if operands[0].kind == SKind.known and operands[0].lower == 1:
+            return SValue(1)
+
+    # If simplification did not reduce to value, return symbolic
+    return SSymbolic(expr, operands)
+
+
 class SSymbolic:
     def __init__(self, expr, operands):
         self.expr = expr
@@ -10,57 +61,46 @@ class SSymbolic:
 
     @property
     def kind(self):
-        # If any operand is unknown/symbolic → symbolic
         for op in self.operands:
             if op.kind in (SKind.unknown, SKind.symbolic):
                 return SKind.symbolic
-        return SKind.known  # all numeric
+        return SKind.known
 
     def __repr__(self):
         return f"{self.expr}({', '.join(map(str, self.operands))})"
 
     def resolve(self):
-        resolved = []
-        for op in self.operands:
-            if isinstance(op, SSymbolic):
-                op_val = op.resolve()
-            else:
-                op_val = op
-            resolved.append(op_val)
+        # Resolve all operands recursively
+        resolved = [op.resolve() if isinstance(op, SSymbolic) else op for op in self.operands]
 
-        # Cannot resolve if any operand is unknown or symbolic
+        # If any operand is unknown or symbolic, keep symbolic
         for op in resolved:
             if op.kind in (SKind.unknown, SKind.symbolic):
-                return SSymbolic(self.expr, resolved)
+                return simplify(self.expr, resolved)
 
         # Compute numeric result
         result = resolved[0]
-        if self.expr == "add":
-            for o in resolved[1:]:
+        for o in resolved[1:]:
+            if self.expr == "add":
                 result = add(result, o)
-        elif self.expr == "sub":
-            for o in resolved[1:]:
+            elif self.expr == "sub":
                 result = add(result, -o)
-        elif self.expr == "mul":
-            for o in resolved[1:]:
+            elif self.expr == "mul":
                 result = product(result, o)
-        elif self.expr == "div":
-            for o in resolved[1:]:
+            elif self.expr == "div":
                 result = divide(result, o)
-        elif self.expr == "pow":
-            for o in resolved[1:]:
+            elif self.expr == "pow":
                 result = power(result, o)
-        else:
-            raise ValueError(f"Unknown operation: {self.expr}")
+            else:
+                raise ValueError(f"Unknown operation: {self.expr}")
 
         return result
-    
-    # == operator overloads ==
 
+    # == operator overloads ==
     def __add__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return add(self, other)
         return SSymbolic("add", [self, other])
 
@@ -70,21 +110,21 @@ class SSymbolic:
     def __sub__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return add(self, -other)
         return SSymbolic("sub", [self, other])
 
     def __rsub__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return add(other, -self)
         return SSymbolic("sub", [other, self])
 
     def __mul__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return product(self, other)
         return SSymbolic("mul", [self, other])
 
@@ -94,71 +134,64 @@ class SSymbolic:
     def __truediv__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return divide(self, other)
         return SSymbolic("div", [self, other])
 
     def __rtruediv__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return divide(other, self)
         return SSymbolic("div", [other, self])
 
     def __pow__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return power(self, other)
         return SSymbolic("pow", [self, other])
 
     def __rpow__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
-        if self.kind != SKind.symbolic and other.kind != SKind.symbolic:
+        if self.kind not in (SKind.symbolic, SKind.unknown) and other.kind not in (SKind.symbolic, SKind.unknown):
             return power(other, self)
         return SSymbolic("pow", [other, self])
 
 class SQuietSymbolic(SSymbolic):
     """Like SSymbolic, but hides unresolved formulas."""
     def resolve(self):
-        # Call the normal SSymbolic resolve
         resolved = super().resolve()
-
-        # If still unresolved symbolic → return unknown SValue
         if isinstance(resolved, SSymbolic) and resolved.kind == SKind.symbolic:
             return SValue()  # unknown
-
-        # Fully numeric → return resolved SValue
         return resolved
-    
+
     def __repr__(self):
         return repr(self.resolve())
 
-# Constant Symbolics
-class SConstSymbolic(SSymbolic): # Immutable symbolic expression. Once created, operands cannot change
+
+class SConstSymbolic(SSymbolic):
+    """Immutable symbolic expression. Once created, operands cannot change."""
     def __init__(self, expr, operands):
-        # Force operands to be a tuple to prevent mutation
         super().__init__(expr, tuple(operands))
 
-    # Override any method that would mutate operands
     @property
     def operands(self):
         return self._operands
 
     @operands.setter
     def operands(self, value):
-        # Prevent reassigning operands
         if hasattr(self, "_operands"):
             raise AttributeError("ConstSymbolic operands cannot be modified")
         self._operands = tuple(value)
 
+
 class SConstQuietSymbolic(SQuietSymbolic):
+    """Immutable quiet symbolic expression."""
     def __init__(self, expr, operands):
-        # force operands to tuple to prevent mutation
         super().__init__(expr, tuple(operands))
 
-    # Prevent reassigning operands
     @property
     def operands(self):
         return self._operands
@@ -170,10 +203,7 @@ class SConstQuietSymbolic(SQuietSymbolic):
         self._operands = tuple(value)
 
     def resolve(self):
-        # Use the quiet resolve logic
-        resolved = super(SQuietSymbolic, self).resolve()  # call SSymbolic.resolve() directly
-
+        resolved = super(SQuietSymbolic, self).resolve()  # call SSymbolic.resolve()
         if isinstance(resolved, SSymbolic) and resolved.kind == SKind.symbolic:
-            return SValue()  # unresolved → unknown
-
+            return SValue()
         return resolved

@@ -11,6 +11,13 @@ The language is designed for **safer, more honest, and analyzable computation** 
 
 For the moment, SK is implemented as a **Python-based prototype**. This allows experimenting with the core concepts of uncertain values, intervals, and symbolic expressions using Python classes and operator overloading. Variables such as `SValue`, `SSymbolic`, and their variants simulate the behavior of the language, while arithmetic operations automatically propagate uncertainty and generate symbolic expressions when operands are unknown or partially known. This approach provides a flexible environment to test and refine the semantics of SK before developing a full compiler or interpreter.
 
+In order to run the python sk tests:
+```sh
+python3 main.py <testname> # only after 'test-', inside ./python-prototype/
+```
+
+## License
+Please contact for license information, still in the works.
 
 ## Core Concepts
 
