@@ -16,12 +16,12 @@ epistemic_if(temp > threshold, activate_cooler, activate_heater)
 # heater ON
 
 # Strict policy: don't run anything
-epistemic_if(temp > threshold, activate_cooler, activate_heater, policy="strict")
+epistemic_if(temp > threshold, activate_cooler, activate_heater)
 # Output: (nothing)
 
 # Fail-on-partial policy: raise exception
 try:
-    epistemic_if(temp > threshold, activate_cooler, activate_heater, policy="fail_on_partial")
+    epistemic_if(temp > threshold, activate_cooler, activate_heater)
 except ValueError as e:
     print(e)
 # Output:

@@ -5,15 +5,19 @@ class SFunction:
 
     def __call__(self, *args):
         if len(args) != len(self.param_names):
-            raise ValueError("Argument count missmatch")
+            # Added a more helpful error message showing expected vs received
+            raise ValueError(f"Argument count mismatch: expected {len(self.param_names)}, got {len(args)}")
         
-        # Map paramaeter name with its value
+        # Map parameter name with its value
         arg_map = dict(zip(self.param_names, args))
 
         # Evaluate the body with these arguments
-        result = self.body_fn(arg_map)
+        # FIX: We use ** to unpack the dictionary into keyword arguments.
+        # This allows you to define functions like 'def my_logic(a, b): ...' 
+        # instead of 'def my_logic(args_dict): ...'
+        result = self.body_fn(**arg_map)
         return result
-    
+
 # Unknowns propagate naturally through the function body.
 # Intervals also propagate and combine automatically.
 # Symbolics are preserved when any operand is symbolic or unknown.

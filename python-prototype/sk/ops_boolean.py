@@ -3,10 +3,14 @@ from .kind import SKind
 from .keywords import *
 
 def greater_than(a: SValue, b: SValue) -> SValue:
+    """Return Strue if a > b, Sfalse if definitely false, Spartial if partially true."""
+    from .symbolic import SSymbolic
+
+    # Handle symbolic or unknown operands first
     if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
-        from .symbolic import SSymbolic
         return SSymbolic("gt", [a, b])
 
+    # Numeric / interval comparison
     a_min, a_max = a.bounds()
     b_min, b_max = b.bounds()
 
@@ -17,15 +21,21 @@ def greater_than(a: SValue, b: SValue) -> SValue:
 
     return Spartial()
 
+
 def less_than(a: SValue, b: SValue) -> SValue:
+    from .symbolic import SSymbolic
+
     if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
-        from .symbolic import SSymbolic
         return SSymbolic("lt", [a, b])
+
+    # Use greater_than by flipping operands
     return greater_than(b, a)
 
+
 def greater_equal(a: SValue, b: SValue) -> SValue:
+    from .symbolic import SSymbolic
+
     if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
-        from .symbolic import SSymbolic
         return SSymbolic("ge", [a, b])
 
     a_min, a_max = a.bounds()
@@ -38,39 +48,53 @@ def greater_equal(a: SValue, b: SValue) -> SValue:
 
     return Spartial()
 
+
 def less_equal(a: SValue, b: SValue) -> SValue:
+    from .symbolic import SSymbolic
+
     if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
-        from .symbolic import SSymbolic
         return SSymbolic("le", [a, b])
+
+    # Flip operands for simplicity
     return greater_equal(b, a)
 
+
 def equal(a: SValue, b: SValue) -> SValue:
+    from .symbolic import SSymbolic
+
     if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
-        from .symbolic import SSymbolic
         return SSymbolic("eq", [a, b])
 
     a_min, a_max = a.bounds()
     b_min, b_max = b.bounds()
 
+    # No overlap → definitely false
     if a_max < b_min or b_max < a_min:
         return Sfalse()
 
+    # Both known and equal
     if a.kind == SKind.known and b.kind == SKind.known and a_min == b_min:
         return Strue()
 
     return Spartial()
 
+
 def not_equal(a: SValue, b: SValue) -> SValue:
+    from .symbolic import SSymbolic
+
     if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
-        from .symbolic import SSymbolic
         return SSymbolic("ne", [a, b])
 
     a_min, a_max = a.bounds()
     b_min, b_max = b.bounds()
 
+    # No overlap → definitely true
     if a_max < b_min or b_max < a_min:
         return Strue()
+
+    # Both known and equal
     if a.kind == SKind.known and b.kind == SKind.known and a_min == b_min:
         return Sfalse()
 
     return Spartial()
+

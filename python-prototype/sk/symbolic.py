@@ -2,43 +2,58 @@ from .value import SValue
 from .kind import SKind
 from .ops import product, add, divide, power
 
-def simplify(expr, operands): # Simplifies trivial expressions for improved efficency!
-    # Flatten SSymbolic operands
+def simplify(expr, operands):
+    """
+    Simplifies trivial expressions for efficiency.
+    Returns SValue if completely numeric, else keeps symbolic.
+    """
+    # If any operand is symbolic, keep symbolic
+    if any(isinstance(op, SSymbolic) for op in operands):
+        return SSymbolic(expr, operands)
+
+    # Flatten resolved operands (they are now all SValue)
     operands = [op if not isinstance(op, SSymbolic) else op.resolve() for op in operands]
 
+    # ADD
     if expr == "add":
-        # remove 0s
         operands = [op for op in operands if not (op.kind == SKind.known and op.lower == 0)]
         if not operands:
             return SValue(0)
         if len(operands) == 1:
             return operands[0]
 
+    # SUB
     elif expr == "sub":
         if operands[1].kind == SKind.known and operands[1].lower == 0:
             return operands[0]
-        if operands[0] == operands[1]:
+        if operands[0].structurally_equal(operands[1]):
+            if operands[0].kind == SKind.interval:
+                return SSymbolic(expr, operands) # Cannot simplify intervals
             return SValue(0)
 
+    # MUL
     elif expr == "mul":
         for op in operands:
             if op.kind == SKind.known and op.lower == 0:
                 return SValue(0)
-        # remove 1s
         operands = [op for op in operands if not (op.kind == SKind.known and op.lower == 1)]
-        if len(operands) == 0:
+        if not operands:
             return SValue(1)
         if len(operands) == 1:
             return operands[0]
 
+    # DIV
     elif expr == "div":
         if operands[0].kind == SKind.known and operands[0].lower == 0:
             return SValue(0)
         if operands[1].kind == SKind.known and operands[1].lower == 1:
             return operands[0]
-        if operands[0] == operands[1]:
+        if operands[0].structurally_equal(operands[1]):
+            if operands[0].kind == SKind.interval:
+                return SSymbolic(expr, operands)
             return SValue(1)
 
+    # POW
     elif expr == "pow":
         if operands[1].kind == SKind.known and operands[1].lower == 0:
             return SValue(1)
@@ -47,10 +62,11 @@ def simplify(expr, operands): # Simplifies trivial expressions for improved effi
         if operands[0].kind == SKind.known and operands[0].lower == 0:
             return SValue(0)
         if operands[0].kind == SKind.known and operands[0].lower == 1:
-            return SValue(1)
+            return operands[0]
 
-    # If simplification did not reduce to value, return symbolic
+    # Otherwise, keep symbolic
     return SSymbolic(expr, operands)
+
 
 
 class SSymbolic:

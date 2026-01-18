@@ -201,18 +201,19 @@ class SValue:
             raise ValueError("Cannot get bounds of Unknown SValue")
 
     # == Bolean logic ==
-
-    def __eq__(self, other):    # ==
+    def __eq__(self, other):
         if not isinstance(other, SValue):
             other = SValue(other)
 
+        # If either is symbolic, return symbolic equality
         if self.kind in (SKind.symbolic, SKind.unknown) or other.kind in (SKind.symbolic, SKind.unknown):
             from .symbolic import SSymbolic
             return SSymbolic("eq", [self, other])
 
+        # Otherwise, numeric equality
         from .ops_boolean import equal
         return equal(self, other)
-    
+
     def __gt__(self, other):    # >
         if not isinstance(other, SValue):
             other = SValue(other)
