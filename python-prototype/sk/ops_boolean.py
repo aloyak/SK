@@ -58,27 +58,6 @@ def less_equal(a: SValue, b: SValue) -> SValue:
     # Flip operands for simplicity
     return greater_equal(b, a)
 
-
-def equal(a: SValue, b: SValue) -> SValue:
-    from .symbolic import SSymbolic
-
-    if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
-        return SSymbolic("eq", [a, b])
-
-    a_min, a_max = a.bounds()
-    b_min, b_max = b.bounds()
-
-    # No overlap → definitely false
-    if a_max < b_min or b_max < a_min:
-        return Sfalse()
-
-    # Both known and equal
-    if a.kind == SKind.known and b.kind == SKind.known and a_min == b_min:
-        return Strue()
-
-    return Spartial()
-
-
 def not_equal(a: SValue, b: SValue) -> SValue:
     from .symbolic import SSymbolic
 
@@ -98,33 +77,53 @@ def not_equal(a: SValue, b: SValue) -> SValue:
 
     return Spartial()
 
-def logic_and(a, b):
-    if a.kind == SKind.known and b.kind == SKind.known:
-        return SValue(1) if (a.lower == 1 and b.lower == 1) else SValue(0)
-    if a.kind == SKind.unknown or b.kind == SKind.unknown:
-        return SValue()
+def logic_and(a: SValue, b: SValue) -> SValue:
+    a_min, a_max = a.bounds()
+    b_min, b_max = b.bounds()
+    
+    res_min = 1 if a_min == 1 and b_min == 1 else 0
+    res_max = 1 if a_max == 1 and b_max == 1 else 0
+    
+    if res_min == res_max:
+        return SValue(res_min)
     return SValue(0, 1)
 
-def logic_or(a, b):
-    if a.kind == SKind.known and b.kind == SKind.known:
-        return SValue(1) if (a.lower == 1 or b.lower == 1) else SValue(0)
-    if a.kind == SKind.unknown or b.kind == SKind.unknown:
-        return SValue()
-    return SValue(0, 1)
-
-def equal(a, b):
-    if a.kind == SKind.known and b.kind == SKind.known:
-        return SValue(1) if a.lower == b.lower else SValue(0)
+def logic_or(a: SValue, b: SValue) -> SValue:
+    a_min, a_max = a.bounds()
+    b_min, b_max = b.bounds()
+    
+    res_min = 1 if a_min == 1 or b_min == 1 else 0
+    res_max = 1 if a_max == 1 or b_max == 1 else 0
+    
+    if res_min == res_max:
+        return SValue(res_min)
     return SValue(0, 1)
 
 def logic_not(val):
     if val.kind == SKind.known:
         return SValue(0) if val.lower == 1 else SValue(1)
     if val.kind == SKind.interval:
-        return SValue(0, 1)
+        v_min, v_max = val.bounds()
+        res_min = 1 if v_max <= 0 else 0
+        res_max = 1 if v_min <= 0 else 0
+        return SValue(res_min, res_max) if res_min != res_max else SValue(res_min)
     return SValue()
 
-def equal(a, b):
-    if a.kind == SKind.known and b.kind == SKind.known:
-        return SValue(1) if a.lower == b.lower else SValue(0)
-    return SValue(0, 1)
+def equal(a: SValue, b: SValue) -> SValue:
+    from .symbolic import SSymbolic
+
+    if a.kind in (SKind.unknown, SKind.symbolic) or b.kind in (SKind.unknown, SKind.symbolic):
+        return SSymbolic("eq", [a, b])
+
+    a_min, a_max = a.bounds()
+    b_min, b_max = b.bounds()
+
+    # No overlap → definitely false
+    if a_max < b_min or b_max < a_min:
+        return Sfalse()
+
+    # Both known and equal
+    if a.kind == SKind.known and b.kind == SKind.known and a_min == b_min:
+        return Strue()
+
+    return Spartial()

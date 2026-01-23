@@ -11,11 +11,13 @@ The language is designed for **safer, more honest, and analyzable computation** 
 For the moment, SK is implemented as a **Python-based prototype**. This allows experimenting with the core concepts of uncertain values, intervals, and symbolic expressions using Python classes and operator overloading. Variables such as `SValue`, `SSymbolic`, and their variants simulate the behavior of the language, while arithmetic operations automatically propagate uncertainty and generate symbolic expressions when operands are unknown or partially known. This approach provides a flexible environment to test and refine the semantics of SK before developing a full compiler or interpreter.
 
 In order to run the python sk tests:
+
 ```sh
 python3 sk.py <testname> # only after 'test-', inside ./python-prototype/
 ```
 
 ## License
+
 Please contact for license information, still in the works.
 
 ## Core Concepts
@@ -83,20 +85,24 @@ print(z.resolve()) // → 5
 ```
 
 * Zero propagation and Exponentiation edge cases:
+
 ```js
 0 * unknown = 0
 0 ^ 0 = 1
 ```
 
 ### 3 Symbolic Variables
+
 * Symbolics in SK represent arithmetic expressions over unknown or interval values. They are created automatically whenever an operation involves unknowns or other symbolics.
 
 Creation:
-```
+
+```js
 unknown b
 let a = 2
 symbolic z = a + b // automatically creates a symbolic expression
 ```
+
 Resolution:
 
 * z itself preserves the symbolic formula (a + b)
@@ -132,7 +138,9 @@ const symbolic z = a + b
 This guarantees the symbolic formula will not be altered during program execution.
 
 ### 4. Epistemic Control Flow
+
 * Control flow respects uncertainty:
+
 ```js
 let x = [0..1]
 
@@ -148,23 +156,29 @@ if x > 0.5 -> merge {
 ```
 
 ### 5. Functions
+
 * Functions can accept uncertain values and propagate uncertainty:
+
 ```js
 fn addUp(n) {
     let result = n * (n + 1) / 2
     print(result)
 }
 ```
+
 * Functions operate seamlessly on known, interval, unknown, and symbolic values.
 
 ### 6. Constraints (Proposed)
+
 * Future SK syntax may allow constraints on unknown values:
+
 ```js
 unknown x > 0        // x is unknown but positive
 unknown y % 2 == 0   // y is unknown but even
 ```
 
 ## Sumary
+
 SK makes unknown and partially known values first-class citizens. Calculations propagate uncertainty, and control flow respects partial knowledge.
 
 * This allows developers to:
