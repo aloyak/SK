@@ -8,6 +8,26 @@ def simplify(expr, operands):
 
     operands = [op if not isinstance(op, SSymbolic) else op.resolve() for op in operands]
 
+    if expr == "and":
+        if any(op.kind == SKind.known and op.lower == 0 for op in operands):
+            return SValue(0)
+        operands = [op for op in operands if not (op.kind == SKind.known and op.lower == 1)]
+        if not operands: return SValue(1)
+        if len(operands) == 1: return operands[0]
+
+    elif expr == "or":
+        if any(op.kind == SKind.known and op.lower == 1 for op in operands):
+            return SValue(1)
+        operands = [op for op in operands if not (op.kind == SKind.known and op.lower == 0)]
+        if not operands: return SValue(0)
+        if len(operands) == 1: return operands[0]
+
+    elif expr == "not":
+        if operands[0].kind == SKind.known:
+            return SValue(0) if operands[0].lower == 1 else SValue(1)
+        if operands[0].kind == SKind.interval:
+            return SValue(0, 1)
+
     if expr == "add":
         operands = [op for op in operands if not (op.kind == SKind.known and op.lower == 0)]
         if not operands:
@@ -52,7 +72,7 @@ class SSymbolic:
         if self._valid:
             return self._cached_value
 
-        resolved = [op.resolve() if isinstance(op, SSymbolic) else op for op in self.operands]
+        resolved = [op.resolve() if hasattr(op, "resolve") else op for op in self.operands]
         
         simplified = simplify(self.expr, resolved)
         if not isinstance(simplified, SSymbolic):
@@ -60,21 +80,41 @@ class SSymbolic:
             self._valid = True
             return simplified
 
-        result = resolved[0]
-        for o in resolved[1:]:
-            if self.expr == "add":
-                from .ops import add as op_add
+        if self.expr == "not":
+            from .ops_boolean import logic_not
+            result = logic_not(resolved[0])
+        elif self.expr == "and":
+            from .ops_boolean import logic_and
+            result = resolved[0]
+            for o in resolved[1:]:
+                result = logic_and(result, o)
+        elif self.expr == "or":
+            from .ops_boolean import logic_or
+            result = resolved[0]
+            for o in resolved[1:]:
+                result = logic_or(result, o)
+        elif self.expr == "eq":
+            from .ops_boolean import equal
+            result = equal(resolved[0], resolved[1])
+        elif self.expr == "add":
+            from .ops import add as op_add
+            result = resolved[0]
+            for o in resolved[1:]:
                 result = op_add(result, o)
-            elif self.expr == "sub":
-                from .ops import add as op_add
-                result = op_add(result, -o)
-            elif self.expr == "mul":
+        elif self.expr == "sub":
+            from .ops import add as op_add
+            result = op_add(resolved[0], -resolved[1])
+        elif self.expr == "mul":
+            result = resolved[0]
+            for o in resolved[1:]:
                 result = product(result, o)
-            elif self.expr == "div":
-                result = divide(result, o)
-            elif self.expr == "pow":
-                result = power(result, o)
-        
+        elif self.expr == "div":
+            result = divide(resolved[0], resolved[1])
+        elif self.expr == "pow":
+            result = power(resolved[0], resolved[1])
+        else:
+            result = self
+
         self._cached_value = result
         self._valid = True
         return result
@@ -123,6 +163,17 @@ class SSymbolic:
         if not isinstance(other, (SValue, SSymbolic)):
             other = SValue(other)
         return SSymbolic("div", [other, self])
+    
+    def __and__(self, other):
+        if not isinstance(other, (SValue, SSymbolic)): other = SValue(other)
+        return SQuietSymbolic("and", [self, other])
+
+    def __or__(self, other):
+        if not isinstance(other, (SValue, SSymbolic)): other = SValue(other)
+        return SQuietSymbolic("or", [self, other])
+
+    def __invert__(self): # ~x 
+        return SQuietSymbolic("not", [self])
 
 class SQuietSymbolic(SSymbolic):
     def resolve(self):

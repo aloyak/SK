@@ -98,3 +98,33 @@ def not_equal(a: SValue, b: SValue) -> SValue:
 
     return Spartial()
 
+def logic_and(a, b):
+    if a.kind == SKind.known and b.kind == SKind.known:
+        return SValue(1) if (a.lower == 1 and b.lower == 1) else SValue(0)
+    if a.kind == SKind.unknown or b.kind == SKind.unknown:
+        return SValue()
+    return SValue(0, 1)
+
+def logic_or(a, b):
+    if a.kind == SKind.known and b.kind == SKind.known:
+        return SValue(1) if (a.lower == 1 or b.lower == 1) else SValue(0)
+    if a.kind == SKind.unknown or b.kind == SKind.unknown:
+        return SValue()
+    return SValue(0, 1)
+
+def equal(a, b):
+    if a.kind == SKind.known and b.kind == SKind.known:
+        return SValue(1) if a.lower == b.lower else SValue(0)
+    return SValue(0, 1)
+
+def logic_not(val):
+    if val.kind == SKind.known:
+        return SValue(0) if val.lower == 1 else SValue(1)
+    if val.kind == SKind.interval:
+        return SValue(0, 1)
+    return SValue()
+
+def equal(a, b):
+    if a.kind == SKind.known and b.kind == SKind.known:
+        return SValue(1) if a.lower == b.lower else SValue(0)
+    return SValue(0, 1)
