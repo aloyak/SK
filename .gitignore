@@ -5,3 +5,5 @@ TODO
 
 interpreter/target
 interpreter/*.lock
+
+.vscode
