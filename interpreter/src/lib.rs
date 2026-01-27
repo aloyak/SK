@@ -1,7 +1,8 @@
 use std::path::Path;
 use std::fs;
 
-use crate::parser::lexer::Token;
+use crate::parser::ast::Stmt;
+use crate::parser::parser::Parser;
 
 pub mod parser;
 
@@ -13,25 +14,25 @@ impl SKInterpreter {
     }
 
     pub fn execute(&self, source: &Path) -> Result<String, String> {
-        let raw = fs::read_to_string(source).expect("Couldn't open file!");
+        let raw = fs::read_to_string(source).map_err(|e| e.to_string())?;
 
-        let tokens = parser::lexer::tokenize(raw);
-        
+        let tokens = parser::lexer::tokenize(raw)?;
+
+        let mut parser = Parser::new(tokens); // Why did I do this?
+        let program = parser.parse()?;     // just to do this later
+
         // debug
-        for token in tokens {
-            if token.token == Token::NewLine {
-                print!("\n")
-            } else {
-                print!("{:?} ", token.token);
-            }
-        }
-        println!("");
+        self.debug_ast(&program);
 
-        //let program = parser::ast::parse(tokens); // + ast
-
-        // evaluator::eval::evaluate(ast, &mut self.env)
-
-        // placeholder
         Ok("output".to_string())
+    }
+
+    fn debug_ast(&self, program: &Vec<Stmt>) {
+        println!("--- Abstract Syntax Tree ---");
+        for (i, stmt) in program.iter().enumerate() {
+            println!("Statement {}:", i);
+            println!("{:#?}", stmt);
+            println!("-----------------------");
+        }
     }
 }

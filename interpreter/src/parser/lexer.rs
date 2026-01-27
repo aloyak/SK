@@ -25,7 +25,8 @@ pub enum Token {
     Return,
     For,
     While,
-    
+    Kind,
+
     // Operators & Symbols
     Assign,      // =
     Arrow,       // ->
@@ -53,6 +54,16 @@ pub enum Token {
     NotEqual,    // !=
     Not,         // !
 
+    // Knowledge Operators
+    Possible,
+    Impossible,
+    Certain,
+    Known,
+
+    True,
+    False,
+    Partial,
+
     NewLine,
     EOF,
 }
@@ -64,9 +75,9 @@ pub struct TokenSpan {
     pub column: usize,
 }
 
-pub fn tokenize(raw: String) -> Vec<TokenSpan> {
+pub fn tokenize(raw: String) -> Result<Vec<TokenSpan>, String> {
     let mut lexer = Lexer::new(raw);
-    lexer.run()
+    lexer.tokenize()
 }
 
 struct Lexer {
@@ -77,7 +88,7 @@ struct Lexer {
 }
 
 impl Lexer {
-    fn new(input: String) -> Self {
+    pub fn new(input: String) -> Self {
         Self {
             source: input.chars().collect(),
             cursor: 0,
@@ -86,19 +97,27 @@ impl Lexer {
         }
     }
 
-    fn run(&mut self) -> Vec<TokenSpan> {
+    pub fn tokenize(&mut self) -> Result<Vec<TokenSpan>, String> {
         let mut tokens = Vec::new();
+
         while !self.is_at_end() {
-            if let Some(token) = self.next_token() {
+            let line = self.line;
+            let column = self.column;
+
+            if let Some(token) = self.next_token()? {
                 tokens.push(TokenSpan {
                     token,
-                    line: self.line,
-                    column: self.column
+                    line,
+                    column,
                 });
             }
         }
-        tokens.push(TokenSpan { token: Token::EOF , line: self.line, column: self.column });
-        tokens
+        tokens.push(TokenSpan { 
+            token: Token::EOF, 
+            line: self.line, 
+            column: self.column 
+        });
+        Ok(tokens)
     }
 
     fn is_at_end(&self) -> bool {
@@ -129,28 +148,28 @@ impl Lexer {
         true
     }
 
-    fn next_token(&mut self) -> Option<Token> {
+    fn next_token(&mut self) -> Result<Option<Token>, String> {
         let c = self.advance();
 
         match c {
-            '(' => Some(Token::LParen),
-            ')' => Some(Token::RParen),
-            '[' => Some(Token::LBracket),
-            ']' => Some(Token::RBracket),
-            '{' => Some(Token::LBrace),
-            '}' => Some(Token::RBrace),
-            '+' => Some(Token::Plus),
-            '*' => Some(Token::Star),
-            '^' => Some(Token::Caret),
-            
+            '(' => Ok(Some(Token::LParen)),
+            ')' => Ok(Some(Token::RParen)),
+            '[' => Ok(Some(Token::LBracket)),
+            ']' => Ok(Some(Token::RBracket)),
+            '{' => Ok(Some(Token::LBrace)),
+            '}' => Ok(Some(Token::RBrace)),
+            '+' => Ok(Some(Token::Plus)),
+            '*' => Ok(Some(Token::Star)),
+            '^' => Ok(Some(Token::Caret)),
+
             '/' => {
-                if self.match_char('/') {   // if comment, continue!
+                if self.match_char('/') {
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();
                     }
-                    None
+                    Ok(None)
                 } else {
-                    Some(Token::Slash)
+                    Ok(Some(Token::Slash))
                 }
             }
 
@@ -167,56 +186,48 @@ impl Lexer {
                     }
                 }
 
-                Some(Token::NewLine)
+                Ok(Some(Token::NewLine))
             }
 
             '=' => {
-                if self.match_char('=') {
-                    Some(Token::Equal)
-                } else {
-                    Some(Token::Assign)
-                }
+                if self.match_char('=') { Ok(Some(Token::Equal)) } 
+                else { Ok(Some(Token::Assign)) }
             }
             '-' => {
-                if self.match_char('>') {
-                    Some(Token::Arrow)
-                } else {
-                    Some(Token::Minus)
-                }
+                if self.match_char('>') { Ok(Some(Token::Arrow)) } 
+                else { Ok(Some(Token::Minus)) }
             }
             '.' => {
-                if self.match_char('.') {
-                    Some(Token::RangeSep)
-                } else {
-                    Some(Token::UnknownChar('.'))
-                }
+                if self.match_char('.') { Ok(Some(Token::RangeSep)) } 
+                
+                else { Ok(Some(Token::UnknownChar('.'))) }
             }
 
             '>' => {
-                if self.match_char('=') { Some(Token::GreaterEqual) } 
-                else { Some(Token::Greater) }
+                if self.match_char('=') { Ok(Some(Token::GreaterEqual)) } 
+                else { Ok(Some(Token::Greater)) }
             }
             '<' => {
-                if self.match_char('=') { Some(Token::LessEqual) } 
-                else { Some(Token::Less) }
+                if self.match_char('=') { Ok(Some(Token::LessEqual)) } 
+                else { Ok(Some(Token::Less)) }
             }
             '!' => {
-                if self.match_char('=') { Some(Token::NotEqual) } 
-                else { Some(Token::Not) }
+                if self.match_char('=') { Ok(Some(Token::NotEqual)) } 
+                else { Ok(Some(Token::Not)) }
             }
 
             // Whitespace
-            ' ' | '\r' | '\t' => None,            
+            ' ' | '\r' | '\t' => Ok(None),     
 
-            '"' | '\'' => Some(self.string(c)),
-            
+            '"' | '\'' => self.string(c).map(Some),
+
             _ => {
                 if c.is_ascii_digit() {
-                    Some(self.number())
+                    Ok(Some(self.number()))
                 } else if c.is_alphabetic() || c == '_' {
-                    Some(self.identifier())
+                    Ok(Some(self.identifier()))
                 } else {
-                    Some(Token::UnknownChar(c))
+                    Ok(Some(Token::UnknownChar(c)))
                 }
             }
         }
@@ -249,6 +260,14 @@ impl Lexer {
             "for" => Token::For,
             "while" => Token::While,
             "none" => Token::None,
+            "kind" => Token::Kind,
+            "true" => Token::True,
+            "false" => Token::False,
+            "partial" => Token::Partial,
+            "possible" => Token::Possible,
+            "impossible" => Token::Impossible,
+            "certain" => Token::Certain,
+            "known" => Token::Known,
             _ => Token::Identifier(text),
         }
     }
@@ -285,7 +304,7 @@ impl Lexer {
         Token::Number(val)
     }
 
-    fn string(&mut self, quote_type: char) -> Token {
+    fn string(&mut self, quote_type: char) -> Result<Token, String> {
         let mut text = String::new();
 
         while self.peek() != quote_type && !self.is_at_end() {
@@ -297,12 +316,11 @@ impl Lexer {
         }
 
         if self.is_at_end() {
-
-            return Token::String(text);
+            return Err(format!("Unterminated string at line {}", self.line));
         }
 
         self.advance();
-        
-        Token::String(text)
+
+        Ok(Token::String(text))
     }
 }

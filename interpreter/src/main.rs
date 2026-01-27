@@ -16,7 +16,7 @@ fn run(path: &Path) {
             println!("{:?}", result);
         }
         Err(e) => {
-            eprintln!("Runtime Error: {}", e);
+            log::error!("Runtime Error: {}", e);
             process::exit(1)
         }
     }

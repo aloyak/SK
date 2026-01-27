@@ -3,9 +3,7 @@
 
 // SK Programming Language
 
-let number = 1 
-print(number) // this variable is known!
-
-if number == 2 {
-    print("hello!")
-}
+unknown myvar // same as let myvar = unknown
+let variable = 67
+let interval = [0..1]
+let scientific = 10e3
