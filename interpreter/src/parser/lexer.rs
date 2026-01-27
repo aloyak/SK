@@ -245,6 +245,11 @@ impl Lexer {
             text.push(self.advance());
         }
 
+        // special case for "panic!"
+        if text == "panic" && self.peek() == '!' {
+            text.push(self.advance());
+        }
+
         match text.as_str() {
             "let" => Token::Let,
             "const" => Token::Const,
@@ -258,7 +263,7 @@ impl Lexer {
             "strict" => Token::Strict,
             "print" => Token::Print,
             "input" => Token::Input,
-            "panic" => Token::Panic,
+            "panic!" => Token::Panic,
             "fn" => Token::Fn,
             "return" => Token::Return,
             "for" => Token::For,

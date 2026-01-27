@@ -17,8 +17,10 @@ print(0*myvar)
 print(kind(variable))
 print(kind(str(variable)))
 
+print("")
 print("SK Language version: " + str(version))
+print("")
 
-panic
+panic!
 
 print("This shouldn't be printed out!")
