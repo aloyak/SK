@@ -83,6 +83,7 @@ impl<'a> Evaluator<'a> {
                     Token::Minus => "-",
                     Token::Star => "*",
                     Token::Slash => "/",
+                    Token::Caret => "^",
                     _ => "?",
                 };
                 format!("({} {} {})", l, op, r)
@@ -263,6 +264,25 @@ impl<'a> Evaluator<'a> {
                 }
             }
 
+            (Value::Number(a), Token::Caret, Value::Number(b)) => Ok(Value::Number(a.powf(b))),
+
+            (Value::Interval(min, max), Token::Caret, Value::Number(n)) => {
+                if n % 2.0 == 0.0 {
+                    let p1 = min.powf(n);
+                    let p2 = max.powf(n);
+                    let mut low = p1.min(p2);
+                    let high = p1.max(p2);
+                    if min <= 0.0 && max >= 0.0 {
+                        low = 0.0;
+                    }
+                    Ok(Value::Interval(low, high))
+                } else {
+                    let p1 = min.powf(n);
+                    let p2 = max.powf(n);
+                    Ok(Value::Interval(p1.min(p2), p1.max(p2)))
+                }
+            }
+
             (Value::Number(a), Token::Plus, Value::Number(b)) => Ok(Value::Number(a + b)),
             (Value::Number(a), Token::Minus, Value::Number(b)) => Ok(Value::Number(a - b)),
             (Value::Number(a), Token::Star, Value::Number(b)) => Ok(Value::Number(a * b)),
@@ -299,7 +319,7 @@ impl<'a> Evaluator<'a> {
                     p.iter().copied().fold(f64::NEG_INFINITY, f64::max)
                 ))
             }
-
+            
             (Value::Symbolic { expression: e1, is_quiet: q1 }, _, val2) => {
                 Ok(Value::Symbolic {
                     expression: Box::new(Expr::Binary {
@@ -320,6 +340,7 @@ impl<'a> Evaluator<'a> {
                     is_quiet: q2,
                 })
             }
+
             (Value::Unknown, _, _) | (_, _, Value::Unknown) => {
                 Ok(Value::Symbolic {
                     expression: Box::new(Expr::Binary {
@@ -330,7 +351,7 @@ impl<'a> Evaluator<'a> {
                     is_quiet: false,
                 })
             }
-            
+
             // String Concatenation!
             (Value::String(mut s1), Token::Plus, Value::String(s2)) => {
                 s1.push_str(&s2);

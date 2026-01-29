@@ -115,11 +115,11 @@ impl Parser {
     }
 
     fn addition(&mut self) -> Result<Expr, String> {
-        let mut expr = self.factor()?;
+        let mut expr = self.multiplication()?;
 
         while self.match_any(&[Token::Plus, Token::Minus]) {
             let operator = self.previous().token.clone();
-            let right = self.factor()?;
+            let right = self.multiplication()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
@@ -129,9 +129,26 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, String> {
+    fn multiplication(&mut self) -> Result<Expr, String> {
+        let mut expr = self.power()?;
+
+        while self.match_tokens(&[Token::Star, Token::Slash]) {
+            let operator = self.previous().token.clone();
+            let right = self.power()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
+    }
+
+    fn power(&mut self) -> Result<Expr, String> {
         let mut expr = self.unary()?;
-        while self.match_any(&[Token::Star, Token::Slash]) {
+
+        while self.match_token(Token::Caret) {
             let operator = self.previous().token.clone();
             let right = self.unary()?;
             expr = Expr::Binary {
@@ -140,6 +157,7 @@ impl Parser {
                 right: Box::new(right),
             };
         }
+
         Ok(expr)
     }
 
@@ -227,6 +245,16 @@ impl Parser {
         if self.check(&t) {
             self.advance();
             return true;
+        }
+        false
+    }
+
+    fn match_tokens(&mut self, types: &[Token]) -> bool {
+        for t in types {
+            if self.check(t) {
+                self.advance();
+                return true;
+            }
         }
         false
     }
