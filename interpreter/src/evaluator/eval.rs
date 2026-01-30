@@ -454,138 +454,35 @@ impl Evaluator {
     }
 
     fn apply_binary(&self, left: Value, op: Token, right: Value) -> Result<Value, String> {
-        match (left.clone(), op.clone(), right.clone()) {
-            // Multiplication by Zero: 0 * unknown = 0
-            (Value::Number(n), Token::Star, _) if n == 0.0 => Ok(Value::Number(0.0)),
-            (_, Token::Star, Value::Number(n)) if n == 0.0 => Ok(Value::Number(0.0)),
-
-            // Self-Subtraction: x - x = 0 (even if x is unknown or an interval)
-            (l, Token::Minus, r) if l == r && l != Value::Unknown => Ok(Value::Number(0.0)),
-                        
-            // Division by Self: x / x = 1 (excluding zero/unknown/intervals containing zero)
-            (l, Token::Slash, r) if l == r => {
-                match l {
-                    Value::Number(n) if n != 0.0 => Ok(Value::Number(1.0)),
-                    Value::Interval(min, max) if min > 0.0 || max < 0.0 => Ok(Value::Number(1.0)),
-                    _ => Ok(Value::Unknown),
-                }
-            }
-
-            (Value::Number(a), Token::Caret, Value::Number(b)) => Ok(Value::Number(a.powf(b))),
+        // 1. Handle Symbolic / Unknown propagation immediately
+        // Note: 0 * Unknown is handled inside Value::mul optimization, 
+        // so we only strictly propagate if concrete calculation isn't possible.
+        
+        let is_symbolic = left.is_symbolic_or_unknown() || right.is_symbolic_or_unknown();
+        
+        // We attempt concrete calculation first if it allows for optimizations (like 0 * symbolic)
+        // If the types don't match or strictly require symbolic propagation, we fall back.
+        
+        let res = match op {
+            Token::Plus => left.add(&right),
+            Token::Minus => left.sub(&right),
+            Token::Star => left.mul(&right),
+            Token::Slash => left.div(&right),
+            Token::Caret => left.pow(&right),
             
-            (Value::Interval(min, max), Token::Caret, Value::Number(n)) => {
-                if n % 2.0 == 0.0 {
-                    let p1 = min.powf(n);
-                    let p2 = max.powf(n);
-                    let mut low = p1.min(p2);
-                    let high = p1.max(p2);
-                    if min <= 0.0 && max >= 0.0 { 
-                        low = 0.0; 
-                    }
-                    Ok(Value::Interval(low, high))
-                } else {
-                    let p1 = min.powf(n);
-                    let p2 = max.powf(n);
-                    Ok(Value::Interval(p1.min(p2), p1.max(p2)))
-                }
-            }
-
-            (Value::Number(a), Token::Plus, Value::Number(b)) => Ok(Value::Number(a + b)),
-            (Value::Number(a), Token::Minus, Value::Number(b)) => Ok(Value::Number(a - b)),
-            (Value::Number(a), Token::Star, Value::Number(b)) => Ok(Value::Number(a * b)),
-            (Value::Number(a), Token::Slash, Value::Number(b)) => {
-                if b == 0.0 { return Err("Division by zero".to_string()); }
-                Ok(Value::Number(a / b))
-            }
-
-            // Interval & Number
-            (Value::Interval(min, max), Token::Plus, Value::Number(n)) |
-            (Value::Number(n), Token::Plus, Value::Interval(min, max)) => Ok(Value::Interval(min + n, max + n)),
-
-            (Value::Interval(min, max), Token::Minus, Value::Number(n)) => Ok(Value::Interval(min - n, max - n)),
-            (Value::Number(n), Token::Minus, Value::Interval(min, max)) => Ok(Value::Interval(n - max, n - min)),
-           
-            (Value::Interval(min, max), Token::Star, Value::Number(n)) |
-            (Value::Number(n), Token::Star, Value::Interval(min, max)) => {
-                let a = min * n;
-                let b = max * n;
-                Ok(Value::Interval(a.min(b), a.max(b)))
-            },
-
-            (Value::Interval(min1, max1), Token::Plus, Value::Interval(min2, max2)) => {
-                Ok(Value::Interval(min1 + min2, max1 + max2))
-            },
-            (Value::Interval(min1, max1), Token::Minus, Value::Interval(min2, max2)) => {
-                Ok(Value::Interval(min1 - max2, max1 - min2))
-            },
-            (Value::Interval(min1, max1), Token::Star, Value::Interval(min2, max2)) => {
-                let p = [min1 * min2, min1 * max2, max1 * min2, max1 * max2];
-                Ok(Value::Interval(
-                    p.iter().copied().fold(f64::INFINITY, f64::min),
-                    p.iter().copied().fold(f64::NEG_INFINITY, f64::max)
-                ))
-            }
-
-            (Value::Number(a), operator, Value::Number(b)) => {
-                let op_str = match operator {
-                    Token::EqualEqual => "==",
-                    Token::BangEqual => "!=",
-                    Token::Greater => ">",
-                    Token::GreaterEqual => ">=",
-                    Token::Less => "<",
-                    Token::LessEqual => "<=",
-                    _ => return self.propagate_symbolic(left, op, right),
-                };
-                Ok(Value::Bool(logic::compare_nums(a, b, op_str)))
-            }
-
-            (Value::String(s1), Token::EqualEqual, Value::String(s2)) => {
-                Ok(Value::Bool(if s1 == s2 { SKBool::True } else { SKBool::False }))
-            }
-            (Value::String(s1), Token::BangEqual, Value::String(s2)) => {
-                Ok(Value::Bool(if s1 != s2 { SKBool::True } else { SKBool::False }))
-            }            
-
-            (Value::Interval(min1, max1), operator, Value::Interval(min2, max2)) => {
-                let op_str = match operator {
-                    Token::Greater => ">",
-                    Token::Less => "<",
-                    Token::GreaterEqual => ">=",
-                    Token::LessEqual => "<=",
-                    Token::EqualEqual => "==",
-                    Token::BangEqual => "!=",
-                    _ => return self.propagate_symbolic(left, op, right),
-                };
-                Ok(Value::Bool(logic::compare_intervals(min1, max1, min2, max2, op_str)))
-            }
-
-            (Value::Interval(min, max), operator, Value::Number(n)) => {
-                self.apply_binary(Value::Interval(min, max), operator, Value::Interval(n, n))
-            }
-            (Value::Number(n), operator, Value::Interval(min, max)) => {
-                self.apply_binary(Value::Interval(n, n), operator, Value::Interval(min, max))
-            }
+            Token::EqualEqual | Token::BangEqual | 
+            Token::Greater | Token::GreaterEqual | 
+            Token::Less | Token::LessEqual => left.compare(&right, &op),
             
-            (Value::Bool(a), Token::And, Value::Bool(b)) => Ok(Value::Bool(logic::and(a, b))),
-            (Value::Bool(a), Token::Or, Value::Bool(b)) => Ok(Value::Bool(logic::or(a, b))),
+            Token::And | Token::Or => left.logic(&right, &op),
             
-            (Value::Symbolic { .. }, op_tok, _) | (_, op_tok, Value::Symbolic { .. }) | (Value::Unknown, op_tok, _) | (_, op_tok, Value::Unknown) => {
-                match op_tok {
-                    Token::Greater | Token::Less | Token::GreaterEqual | 
-                    Token::LessEqual | Token::EqualEqual | Token::BangEqual | 
-                    Token::And | Token::Or => {
-                        Ok(Value::Bool(SKBool::Partial))
-                    }
-                    _ => self.propagate_symbolic(left, op, right)
-                }
-            }
+            _ => Err(format!("Unknown binary operator {:?}", op)),
+        };
 
-            (Value::String(mut s1), Token::Plus, Value::String(s2)) => {
-                s1.push_str(&s2);
-                Ok(Value::String(s1))
-            }
-
-            _ => Err("Operation not supported for these types".to_string()),
+        match res {
+            Ok(val) => Ok(val),
+            Err(_) if is_symbolic => self.propagate_symbolic(left, op, right),
+            Err(e) => Err(e),
         }
     }
 
