@@ -180,6 +180,10 @@ impl Evaluator {
                 Token::Impossible => Some("impossible".to_string()),
                 Token::Str => Some("str".to_string()),
                 Token::Num => Some("num".to_string()),
+                Token::Width => Some("width".to_string()),
+                Token::Mid => Some("mid".to_string()),
+                Token::Intersect => Some("intersect".to_string()),
+                Token::Union => Some("union".to_string()),
 
                 _ => None,
             },
@@ -360,6 +364,44 @@ impl Evaluator {
                             _ => SKBool::True,
                         };
                         Ok(Value::Bool(res))
+                    }
+                    "width" => {
+                        if eval_args.len() != 1 { return Err("width() expects 1 arg".to_string()); }
+                        match eval_args[0] {
+                            Value::Interval(min, max) => Ok(Value::Number(max - min)),
+                            _ => Err("width() requires an interval".to_string()),
+                        }
+                    }
+                    "mid" => {
+                        if eval_args.len() != 1 { return Err("mid() expects 1 arg".to_string()); }
+                        match eval_args[0] {
+                            Value::Interval(min, max) => Ok(Value::Number((min + max) / 2.0)),
+                            _ => Err("mid() requires an interval".to_string()),
+                        }
+                    }
+                    "union" => {
+                        if eval_args.len() != 2 { return Err("union() expects 2 args".to_string()); }
+                        match (&eval_args[0], &eval_args[1]) {
+                            (Value::Interval(min1, max1), Value::Interval(min2, max2)) => {
+                                Ok(Value::Interval(min1.min(*min2), max1.max(*max2)))
+                            }
+                            _ => Err("union() requires two intervals".to_string()),
+                        }
+                    }
+                    "intersect" => {
+                        if eval_args.len() != 2 { return Err("intersect() expects 2 args".to_string()); }
+                        match (&eval_args[0], &eval_args[1]) {
+                            (Value::Interval(min1, max1), Value::Interval(min2, max2)) => {
+                                let start = min1.max(*min2);
+                                let end = max1.min(*max2);
+                                if start <= end {
+                                    Ok(Value::Interval(start, end))
+                                } else {
+                                    Ok(Value::None) // No overlap = None
+                                }
+                            }
+                            _ => Err("intersect() requires two intervals".to_string()),
+                        }
                     }
                     _ => Err(format!("Unknown function '{}'", func_name)),
                 }

@@ -1,5 +1,8 @@
-let name = input("Enter your name: ")
-print("Hello, " + name)
+let A = [0..10]
+let B = [5..15]
 
-let age = num(input("Enter your age: "))
-print("Next year you will be " + str(age + 1) + " years old!")
+print(width(A))
+print(mid(A))
+
+print(union(A, B))
+print(intersect(A, B))

@@ -84,7 +84,6 @@ impl Parser {
             return Ok(Stmt::Block { statements: self.block()? });
         }
 
-        // Check for assignment: identifier = expression
         if self.peek_type(Token::Identifier(String::new())) && self.peek_next_type(Token::Assign) {
             let name = self.advance().token.clone();
             self.advance(); // consume '='
@@ -92,24 +91,7 @@ impl Parser {
             self.end_stmt()?;
             return Ok(Stmt::Assign { name, value });
         }
-
         let expr = self.expression()?;
-
-        if let Expr::Call { ref callee, .. } = expr {
-            if let Expr::Variable { name: Token::Identifier(ref n) } = **callee {
-                if n == "print" {
-                    self.end_stmt()?;
-                    return Ok(Stmt::Print { expression: expr });
-                }
-            }
-        }
-
-        if let Expr::Variable { name: Token::Identifier(ref n) } = expr {
-            if n == "print" {
-                return Err("Syntax Error: 'print' is a function and requires parentheses. Use: print(...)".to_string());
-            }
-        }
-
         self.end_stmt()?;
         Ok(Stmt::Expression { expression: expr })
     }
@@ -297,6 +279,10 @@ impl Parser {
             || self.match_token(Token::Known)
             || self.match_token(Token::Possible)
             || self.match_token(Token::Impossible)
+            || self.match_token(Token::Width)
+            || self.match_token(Token::Mid)
+            || self.match_token(Token::Intersect)
+            || self.match_token(Token::Union)
             || self.match_token(Token::String("".to_string())) {
 
             return Ok(Expr::Variable { name: self.previous().token.clone() });

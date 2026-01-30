@@ -297,6 +297,10 @@ impl Lexer {
             "impossible" => Token::Impossible,
             "certain" => Token::Certain,
             "known" => Token::Known,
+            "width" => Token::Width,
+            "mid" => Token::Mid,
+            "intersection" => Token::Intersect,
+            "union" => Token::Union,
             _ => Token::Identifier(text),
         }
     }

@@ -2,7 +2,10 @@ let a = 10
 
 {
     let a = 15
+    let b = 67
     print(a)
 }
 
 print(a)
+
+print(b) // Error! 'b' is out of scope

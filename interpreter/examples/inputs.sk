@@ -1,0 +1,5 @@
+let name = input("Enter your name: ")
+print("Hello, " + name)
+
+let age = num(input("Enter your age: "))
+print("Next year you will be " + str(age + 1) + " years old!")
