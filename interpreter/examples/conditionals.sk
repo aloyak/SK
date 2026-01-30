@@ -1,4 +1,4 @@
-let x = [10..20]
+unknown x
 
 if x > 15 -> panic { 
     print("Branch A")

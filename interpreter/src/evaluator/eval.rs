@@ -565,12 +565,19 @@ impl Evaluator {
             (Value::Number(n), operator, Value::Interval(min, max)) => {
                 self.apply_binary(Value::Interval(n, n), operator, Value::Interval(min, max))
             }
-
+            
             (Value::Bool(a), Token::And, Value::Bool(b)) => Ok(Value::Bool(logic::and(a, b))),
             (Value::Bool(a), Token::Or, Value::Bool(b)) => Ok(Value::Bool(logic::or(a, b))),
             
-            (Value::Symbolic { .. }, _, _) | (_, _, Value::Symbolic { .. }) | (Value::Unknown, _, _) | (_, _, Value::Unknown) => {
-                self.propagate_symbolic(left, op, right)
+            (Value::Symbolic { .. }, op_tok, _) | (_, op_tok, Value::Symbolic { .. }) | (Value::Unknown, op_tok, _) | (_, op_tok, Value::Unknown) => {
+                match op_tok {
+                    Token::Greater | Token::Less | Token::GreaterEqual | 
+                    Token::LessEqual | Token::EqualEqual | Token::BangEqual | 
+                    Token::And | Token::Or => {
+                        Ok(Value::Bool(SKBool::Partial))
+                    }
+                    _ => self.propagate_symbolic(left, op, right)
+                }
             }
 
             (Value::String(mut s1), Token::Plus, Value::String(s2)) => {
