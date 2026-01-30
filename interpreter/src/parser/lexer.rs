@@ -20,6 +20,8 @@ pub enum Token {
     None,
     Print,
     Input,
+    Str,
+    Num,
     Panic,
     Fn,
     Return,

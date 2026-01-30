@@ -143,6 +143,9 @@ impl<'a> Evaluator<'a> {
                 Token::Known => Some("known".to_string()),
                 Token::Possible => Some("possible".to_string()),
                 Token::Impossible => Some("impossible".to_string()),
+                Token::Str => Some("str".to_string()),
+                Token::Num => Some("num".to_string()),
+                
                 _ => None,
             },
             Expr::Grouping { expression } => self.get_func_name(expression),
@@ -237,6 +240,19 @@ impl<'a> Evaluator<'a> {
                                 }
                             }
                             _ => Ok(Value::String(format!("{}", eval_args[0]))),
+                        }
+                    }
+                    "num" => {
+                        if eval_args.len() != 1 { return Err("num() expects 1 arg".to_string()); }
+                        
+                        match &eval_args[0] {
+                            Value::String(s) => {
+                                s.parse::<f64>()
+                                    .map(Value::Number)
+                                    .map_err(|_| format!("Conversion Error: Cannot parse '{}' as a number", s))
+                            }
+                            Value::Number(n) => Ok(Value::Number(*n)),
+                            _ => Err("num() argument must be a string or number".to_string()),
                         }
                     }
                     "print" => {
