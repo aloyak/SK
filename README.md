@@ -12,7 +12,7 @@ The final version of SK is in the works with a full scale rust interpreter.
 
 ```sh
 cargo build
-./sk examples.sk
+cargo run -- examples/test.sk # or ./sk examples.sk
 ```
 
 ## Python Prototype
@@ -93,6 +93,18 @@ print(z.resolve()) // → 5
 ```js
 0 * unknown = 0
 0 ^ 0 = 1
+```
+
+* Knowledge Operators:
+
+```js
+let val = [10..20]
+let check = val > 15
+
+print(check)            // → partial
+print(certain(check))   // → false
+print(possible(check))  // → true
+print(known(val))       // → false
 ```
 
 ### 3 Symbolic Variables
