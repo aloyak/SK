@@ -6,7 +6,4 @@ TODO
 interpreter/target
 interpreter/*.lock
 
-# keep this secret for now
 website
-
-.vscode

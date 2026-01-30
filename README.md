@@ -1,4 +1,7 @@
-# The SK Programming Language
+<div align="center">
+  <img src="skicon.png" alt="SK Logo" width="160" height="160"> 
+  <h1 style="font-size: 3rem; margin-top: 10px;">The SK Programming Language</h1>
+</div>
 
 ## Overview
 
@@ -8,11 +11,11 @@ The language is designed for **safer, more honest, and analyzable computation** 
 
 ## Rust Interpreter
 
-The final version of SK is in the works with a full scale rust interpreter.
+The final version of SK is in the works with a full scale Rust interpreter.
 
 ```sh
 cargo build
-cargo run -- examples/test.sk # or ./sk examples.sk
+cargo run -- examples/test.sk # or ./sk examples.sk, inside ./interpreter
 ```
 
 ## Python Prototype
@@ -38,7 +41,7 @@ SK supports several kinds of values:
 * **Known values** – exact, fully determined numbers or objects:
 
 ```js
-let n = 3       // n is exactly 3
+let n = 3       // n is 3
 ```
 
 * **Intervals** – ranges of possible numeric values:
@@ -60,14 +63,12 @@ symbolic area
 area = side^2
 ```
 
-* **Quiet symbolic values** – similar to symbolic, but if unresolved, printing hides the formula:
+* **Quiet symbolic values** – similar to symbolic, but it keeps the formula hidden
 
 ```js
 quiet volume
 volume = side^3
 ```
-
-* **Constant symbolics** – immutable symbolic expressions:
 
 ### 2. Operators
 
@@ -80,19 +81,19 @@ unknown b // 'Same as' let b = unknown
 symbolic z = a + b
 
 print(z)          // → a + b
-print(z.resolve()) // → 2 + unknown
+print(resolve(z)) // → 2 + unknown
 
 b = 3
 
 print(z)          // → 2 + 3
-print(z.resolve()) // → 5
+print(resolve(z)) // → 5
 ```
 
 * Zero propagation and Exponentiation edge cases:
 
 ```js
 0 * unknown = 0
-0 ^ 0 = 1
+0 ^ 0 = 1 // YES it is, Okay?!
 ```
 
 * Knowledge Operators:
@@ -107,74 +108,74 @@ print(possible(check))  // → true
 print(known(val))       // → false
 ```
 
-### 3 Symbolic Variables
-
-* Symbolics in SK represent arithmetic expressions over unknown or interval values. They are created automatically whenever an operation involves unknowns or other symbolics.
-
-Creation:
+* Interval Operators:
 
 ```js
-unknown b
-let a = 2
-symbolic z = a + b // automatically creates a symbolic expression
+let A = [0..10]
+let B = [5..15]
+
+print(width(A))     // → 10
+print(mid(A))       // → 5
+
+print(union(A, B))  // → [0..15]
+print(intersect(A, B)) // → [5..10]
 ```
 
-Resolution:
-
-* z itself preserves the symbolic formula (a + b)
-
-* z.resolve() evaluates as much as possible using known operands (2 + unknown)
-
-When all operands are known, z.resolve() returns a concrete known value
-
-```js
-b = 3             // not unknown anymore
-print(z)          // 2 + 3
-print(z.resolve()) // → 5
-```
-
-Quiet Symbolics
-
-* Quiet symbolics (quiet) hide the formula if not fully resolvable:
-
-```js
-quiet volume
-volume = side^3
-print(volume) // → unknown if side is unknown
-```
-
-This guarantees the symbolic formula will not be altered during program execution.
-
-### 4. Epistemic Control Flow
+### 3. Epistemic Control Flow
 
 * Control flow respects uncertainty:
 
 ```js
 let x = [0..1]
 
-if x > 0.5 -> merge {
+if x > 0.5 -> merge { // merge is an 'if policy'
     result = "high"
 } else {
     result = "low"
 }
-
-// Runs both results so in this case result = ["low".."high"]
-
-
 ```
 
-### 5. Functions
+* In order to solve uncertain cases, ifs can have different policies:
+  * ```strict``` (Default) Doesn't run any branch
+  * ```merge```  Runs both branches
+  * ```panic```  Runetime Error
+
+* Scopes:
+
+```js
+let a = 10
+
+{
+    let a = 15
+    let b = 67
+    print(a) // → 15
+}
+
+print(a) // → 10
+
+print(b) // Error! 'b' is out of scope
+```
+
+### 4. Functions
 
 * Functions can accept uncertain values and propagate uncertainty:
 
 ```js
 fn addUp(n) {
     let result = n * (n + 1) / 2
-    print(result)
+    result  // returns are the last value given at end of block
 }
 ```
 
 * Functions operate seamlessly on known, interval, unknown, and symbolic values.
+
+### 5. Basic Built-in functions
+
+* ```print()```
+* ```input()```
+* ```str()``` converts anything to a string
+* ```num()``` converts, when possible, to a number
+* ```panic!``` or simply ```panic``` (not recommended), throws a run time error and finishes program execution
 
 ### 6. Constraints (Proposed)
 
@@ -185,18 +186,12 @@ unknown x > 0        // x is unknown but positive
 unknown y % 2 == 0   // y is unknown but even
 ```
 
-## Sumary
-
-SK makes unknown and partially known values first-class citizens. Calculations propagate uncertainty, and control flow respects partial knowledge.
-
-* This allows developers to:
-* Write safer programs for uncertain environments
-* Track assumptions explicitly
-* Produce explanations for derived values
-* Reason rigorously about partially known information
-
-SK transforms programming from assuming precision to honestly modeling knowledge and ignorance, enabling robust, intelligent systems.
-
 ## Flavortown Hackclub
 
-<https://flavortown.hackclub.com/projects/8834>
+Proud member of HackClub!
+
+<div align="center">
+  <a href="<https://flavortown.hackclub.com/projects/8834>">
+    <img src="https://assets.hackclub.com/flag-standalone.svg" alt="Hack Club" width="150" />
+  </a>
+</div>
