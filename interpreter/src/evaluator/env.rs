@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use crate::core::value::Value;
+use crate::evaluator::builtins;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
@@ -11,10 +12,33 @@ pub struct Environment {
 
 impl Environment {
     pub fn new() -> Self {
-        Self {
+        let mut env = Self {
             values: HashMap::new(),
             enclosing: None,
+        };
+
+        let defs: [(&str, crate::core::value::NativeFn); 14] = [
+            ("print", builtins::print),
+            ("input", builtins::input),
+            ("num", builtins::num),
+            ("str", builtins::str),
+            ("resolve", builtins::resolve),
+            ("certain", builtins::certain),
+            ("impossible", builtins::impossible),
+            ("possible", builtins::possible),
+            ("known", builtins::known),
+            ("kind", builtins::kind),
+            ("intersect", builtins::intersect),
+            ("union", builtins::union),
+            ("mid", builtins::mid),
+            ("width", builtins::width),
+        ];
+
+        for (name, func) in defs {
+            env.define(name.to_string(), Value::NativeFn(func));
         }
+
+        env
     }
 
     pub fn new_enclosed(enclosing: Rc<RefCell<Environment>>) -> Self {

@@ -10,7 +10,9 @@ pub enum SKBool {
     Partial
 }
 
-#[derive(Debug, Clone, PartialEq)]
+pub type NativeFn = fn(Vec<Value>, &mut crate::evaluator::eval::Evaluator) -> Result<Value, String>;
+
+#[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
     String(String),
@@ -21,12 +23,69 @@ pub enum Value {
         expression: Box<Expr>,
         is_quiet: bool,
     },
+    NativeFn(NativeFn),
     None,
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => a == b,
+            (Value::String(a), Value::String(b)) => a == b,
+            (Value::Bool(a), Value::Bool(b)) => a == b,
+            (Value::Interval(a_min, a_max), Value::Interval(b_min, b_max)) => a_min == b_min && a_max == b_max,
+            (Value::Unknown, Value::Unknown) => true,
+            (Value::Symbolic { expression: e1, is_quiet: q1 }, Value::Symbolic { expression: e2, is_quiet: q2 }) => e1 == e2 && q1 == q2,
+            (Value::None, Value::None) => true,
+            (Value::NativeFn(_), Value::NativeFn(_)) => false,
+            _ => false,
+        }
+    }
 }
 
 impl Value {
     pub fn is_symbolic_or_unknown(&self) -> bool {
         matches!(self, Value::Symbolic { .. } | Value::Unknown)
+    }
+
+    fn format_expr(expr: &Expr) -> String {
+        match expr {
+            Expr::Binary { left, operator, right } => {
+                let l = Self::format_expr(left);
+                let r = Self::format_expr(right);
+                let op = match operator {
+                    Token::Plus => "+",
+                    Token::Minus => "-",
+                    Token::Star => "*",
+                    Token::Slash => "/",
+                    Token::Caret => "^",
+                    Token::EqualEqual => "==",
+                    Token::BangEqual => "!=",
+                    Token::Greater => ">",
+                    Token::GreaterEqual => ">=",
+                    Token::Less => "<",
+                    Token::LessEqual => "<=",
+                    Token::And => "&&",
+                    Token::Or => "||",
+                    _ => "?",
+                };
+                format!("({} {} {})", l, op, r)
+            }
+            Expr::Literal { value } => match value {
+                Token::Number(n) => n.to_string(),
+                Token::String(s) => s.clone(),
+                Token::True => "true".to_string(),
+                Token::False => "false".to_string(),
+                Token::Partial => "partial".to_string(),
+                Token::Unknown => "unknown".to_string(),
+                _ => format!("{:?}", value),
+            },
+            Expr::Variable { name } => {
+                if let Token::Identifier(n) = name { n.clone() } else { format!("{:?}", name) }
+            }
+            Expr::Grouping { expression } => format!("({})", Self::format_expr(expression)),
+            _ => "...".to_string(),
+        }
     }
 
     pub fn add(&self, other: &Value) -> Result<Value, String> {
@@ -191,8 +250,9 @@ impl fmt::Display for Value {
             Value::Bool(SKBool::False) => write!(f, "false"),
             Value::Bool(SKBool::Partial) => write!(f, "partial"),
             Value::Interval(min, max) => write!(f, "[{}..{}]", min, max),
-            Value::Symbolic { .. } => write!(f, "<symbolic>"),
+            Value::Symbolic { expression, .. } => write!(f, "{}", Self::format_expr(expression)),
             Value::Unknown => write!(f, "unknown"),
+            Value::NativeFn(_) => write!(f, "<native fn>"),
             Value::None => write!(f, "none"),
         }
     }

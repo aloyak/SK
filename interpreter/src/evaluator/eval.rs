@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 pub struct Evaluator {
-    env: Rc<RefCell<Environment>>,
+    pub env: Rc<RefCell<Environment>>,
 }
 
 impl Evaluator {
@@ -21,6 +21,10 @@ impl Evaluator {
             last_value = self.eval_stmt(stmt)?;
         }
         Ok(last_value)
+    }
+
+    pub fn evaluate_expression(&mut self, expr: Expr) -> Result<Value, String> {
+        self.eval_expr(expr)
     }
 
     fn execute_block(&mut self, statements: Vec<Stmt>, env: Environment) -> Result<Value, String> {
@@ -206,33 +210,7 @@ impl Evaluator {
             Value::Bool(SKBool::Partial) => Token::Partial,
             Value::Unknown => Token::Unknown,
             Value::None => Token::None,
-            Value::Interval(_, _) => Token::Unknown,
-            Value::Symbolic { .. } => Token::Unknown,
-        }
-    }
-
-    fn get_func_name(&self, expr: &Expr) -> Option<String> {
-        match expr {
-            Expr::Variable { name } => match name {
-                Token::Identifier(n) => Some(n.clone()),
-                Token::Print => Some("print".to_string()),
-                Token::Input => Some("input".to_string()),
-                Token::Kind => Some("kind".to_string()),
-                Token::Certain => Some("certain".to_string()),
-                Token::Known => Some("known".to_string()),
-                Token::Possible => Some("possible".to_string()),
-                Token::Impossible => Some("impossible".to_string()),
-                Token::Str => Some("str".to_string()),
-                Token::Num => Some("num".to_string()),
-                Token::Width => Some("width".to_string()),
-                Token::Mid => Some("mid".to_string()),
-                Token::Intersect => Some("intersect".to_string()),
-                Token::Union => Some("union".to_string()),
-
-                _ => None,
-            },
-            Expr::Grouping { expression } => self.get_func_name(expression),
-            _ => None,
+            _ => Token::Unknown,
         }
     }
 
@@ -255,11 +233,24 @@ impl Evaluator {
             }
 
             Expr::Variable { name } => {
-                if let Token::Identifier(n) = name {
-                    self.env.borrow().get(&n)
-                } else {
-                    Err(format!("Cannot use keyword '{:?}' as a variable", name))
-                }
+                let name_str = match name {
+                    Token::Identifier(n) => n,
+                    Token::Print => "print".to_string(),
+                    Token::Input => "input".to_string(),
+                    Token::Kind => "kind".to_string(),
+                    Token::Certain => "certain".to_string(),
+                    Token::Known => "known".to_string(),
+                    Token::Possible => "possible".to_string(),
+                    Token::Impossible => "impossible".to_string(),
+                    Token::Str => "str".to_string(),
+                    Token::Num => "num".to_string(),
+                    Token::Width => "width".to_string(),
+                    Token::Mid => "mid".to_string(),
+                    Token::Intersect => "intersect".to_string(),
+                    Token::Union => "union".to_string(),
+                    _ => return Err("Expected identifier".to_string()),
+                };
+                self.env.borrow().get(&name_str)
             }
 
             Expr::Interval { min, max } => {
@@ -288,181 +279,22 @@ impl Evaluator {
 
             Expr::Grouping { expression } => self.eval_expr(*expression),
             Expr::Call { callee, arguments } => {
-                let func_name = self.get_func_name(&callee)
-                    .ok_or_else(|| format!("Invalid function call: expected identifier, found {:?}", callee))?;
-                let mut eval_args = Vec::new();
+                let callee_val = self.eval_expr(*callee)?;
+                let mut args = Vec::new();
                 for arg in arguments {
-                    eval_args.push(self.eval_expr(arg)?);
+                    args.push(self.eval_expr(arg)?);
                 }
-                match func_name.as_str() {
-                    "resolve" => {
-                        if eval_args.len() != 1 { return Err("resolve() expects 1 arg".to_string()); }
-                        match eval_args[0].clone() {
-                            Value::Symbolic { expression, .. } => self.eval_expr(*expression),
-                            other => Ok(other),
-                        }
-                    }
-                    "kind" => {
-                        if eval_args.len() != 1 { return Err("kind() expects 1 arg".to_string()); }
-                        let type_name = match eval_args[0] {
-                            Value::Symbolic { is_quiet: true, .. } => "quiet",
-                            Value::Symbolic { is_quiet: false, .. } => "symbolic",
-                            Value::Number(_) => "number",
-                            Value::String(_) => "string",
-                            Value::Bool(_) => "bool",
-                            Value::Interval(_, _) => "interval",
-                            Value::Unknown => "unknown",
-                            _ => "none",
-                        };
-                        Ok(Value::String(type_name.to_string()))
-                    }
-                    "str" => {
-                        if eval_args.len() != 1 { return Err("str() expects 1 arg".to_string()); }
-                        match eval_args[0] {
-                            Value::Symbolic { ref expression, is_quiet } => {
-                                if is_quiet {
-                                    let resolved = self.eval_expr(*expression.clone())?;
-                                    Ok(Value::String(format!("{}", resolved)))
-                                } else {
-                                    Ok(Value::String(self.format_symbolic(expression)))
-                                }
-                            }
-                            _ => Ok(Value::String(format!("{}", eval_args[0]))),
-                        }
-                    }
-                    "num" => {
-                        if eval_args.len() != 1 { return Err("num() expects 1 arg".to_string()); }
-
-                        match &eval_args[0] {
-                            Value::String(s) => {
-                                s.parse::<f64>()
-                                    .map(Value::Number)
-                                    .map_err(|_| format!("Conversion Error: Cannot parse '{}' as a number", s))
-                            }
-                            Value::Number(n) => Ok(Value::Number(*n)),
-                            _ => Err("num() argument must be a string or number".to_string()),
-                        }
-                    }
-                    "print" => {
-                        for arg in eval_args {
-                            match arg {
-                                Value::Symbolic { ref expression, is_quiet } => {
-                                    if is_quiet {
-                                        let resolved = self.eval_expr(*expression.clone())?;
-                                        print!("{} ", resolved);
-                                    } else {
-                                        print!("{} ", self.format_symbolic(expression));
-                                    }
-                                }
-                                _ => print!("{} ", arg),
-                            }
-                        }
-                        println!();
-                        Ok(Value::None)
-                    }
-                    "input" => {
-                        use std::io::{self, Write};
-                        if eval_args.len() > 1 { return Err("input() expects 0 or 1 arg".to_string()); }
-
-                        if let Some(prompt) = eval_args.get(0) {
-                            print!("{}", prompt);
-                            io::stdout().flush().map_err(|e| e.to_string())?;
-                        }
-
-                        let mut buffer = String::new();
-                        io::stdin().read_line(&mut buffer).map_err(|e| e.to_string())?;
-
-                        Ok(Value::String(buffer.trim_end().to_string()))
-                    }
-                    "certain" => {
-                        if eval_args.len() != 1 { return Err("certain() expects 1 arg".to_string()); }
-                        let res = match eval_args[0] {
-                            Value::Bool(SKBool::True) => SKBool::True,
-                            _ => SKBool::False,
-                        };
-                        Ok(Value::Bool(res))
-                    }
-                    "possible" => {
-                        if eval_args.len() != 1 { return Err("possible() expects 1 arg".to_string()); }
-                        let res = match eval_args[0] {
-                            Value::Bool(SKBool::False) => SKBool::False,
-                            _ => SKBool::True,
-                        };
-                        Ok(Value::Bool(res))
-                    }
-                    "impossible" => {
-                        if eval_args.len() != 1 { return Err("impossible() expects 1 arg".to_string()); }
-                        let res = match eval_args[0] {
-                            Value::Bool(SKBool::False) => SKBool::True,
-                            _ => SKBool::False,
-                        };
-                        Ok(Value::Bool(res))
-                    }
-                    "known" => {
-                        if eval_args.len() != 1 { return Err("known() expects 1 arg".to_string()); }
-                        let res = match eval_args[0] {
-                            Value::Bool(SKBool::Partial) | 
-                            Value::Unknown | 
-                            Value::Interval(_, _) | 
-                            Value::Symbolic { .. } => SKBool::False,
-                            _ => SKBool::True,
-                        };
-                        Ok(Value::Bool(res))
-                    }
-                    "width" => {
-                        if eval_args.len() != 1 { return Err("width() expects 1 arg".to_string()); }
-                        match eval_args[0] {
-                            Value::Interval(min, max) => Ok(Value::Number(max - min)),
-                            _ => Err("width() requires an interval".to_string()),
-                        }
-                    }
-                    "mid" => {
-                        if eval_args.len() != 1 { return Err("mid() expects 1 arg".to_string()); }
-                        match eval_args[0] {
-                            Value::Interval(min, max) => Ok(Value::Number((min + max) / 2.0)),
-                            _ => Err("mid() requires an interval".to_string()),
-                        }
-                    }
-                    "union" => {
-                        if eval_args.len() != 2 { return Err("union() expects 2 args".to_string()); }
-                        match (&eval_args[0], &eval_args[1]) {
-                            (Value::Interval(min1, max1), Value::Interval(min2, max2)) => {
-                                Ok(Value::Interval(min1.min(*min2), max1.max(*max2)))
-                            }
-                            _ => Err("union() requires two intervals".to_string()),
-                        }
-                    }
-                    "intersect" => {
-                        if eval_args.len() != 2 { return Err("intersect() expects 2 args".to_string()); }
-                        match (&eval_args[0], &eval_args[1]) {
-                            (Value::Interval(min1, max1), Value::Interval(min2, max2)) => {
-                                let start = min1.max(*min2);
-                                let end = max1.min(*max2);
-                                if start <= end {
-                                    Ok(Value::Interval(start, end))
-                                } else {
-                                    Ok(Value::None) // No overlap = None
-                                }
-                            }
-                            _ => Err("intersect() requires two intervals".to_string()),
-                        }
-                    }
-                    _ => Err(format!("Unknown function '{}'", func_name)),
+                match callee_val {
+                    Value::NativeFn(func) => func(args, self),
+                    _ => Err(format!("Value '{}' is not callable", callee_val)),
                 }
             }
         }
     }
 
-    fn apply_binary(&self, left: Value, op: Token, right: Value) -> Result<Value, String> {
-        // 1. Handle Symbolic / Unknown propagation immediately
-        // Note: 0 * Unknown is handled inside Value::mul optimization, 
-        // so we only strictly propagate if concrete calculation isn't possible.
-        
+    fn apply_binary(&mut self, left: Value, op: Token, right: Value) -> Result<Value, String> {
         let is_symbolic = left.is_symbolic_or_unknown() || right.is_symbolic_or_unknown();
-        
-        // We attempt concrete calculation first if it allows for optimizations (like 0 * symbolic)
-        // If the types don't match or strictly require symbolic propagation, we fall back.
-        
+
         let res = match op {
             Token::Plus => left.add(&right),
             Token::Minus => left.sub(&right),
