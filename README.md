@@ -15,7 +15,7 @@ The final version of SK is in the works with a full scale Rust interpreter.
 
 ```sh
 cargo build
-cargo run -- examples/test.sk # or ./sk examples.sk, inside ./interpreter
+cargo run -- examples/test.sk # or ./sk test.sk, inside ./interpreter
 ```
 
 ## Python Prototype
