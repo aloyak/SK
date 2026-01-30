@@ -1,6 +1,7 @@
 use crate::parser::ast::{Expr, Stmt};
 use crate::parser::lexer::Token;
 use crate::core::value::{Value, SKBool};
+use crate::core::logic;
 use crate::evaluator::env::Environment;
 
 pub struct Evaluator<'a> {
@@ -84,6 +85,14 @@ impl<'a> Evaluator<'a> {
                     Token::Star => "*",
                     Token::Slash => "/",
                     Token::Caret => "^",
+                    Token::EqualEqual => "==",
+                    Token::BangEqual => "!=",
+                    Token::Greater => ">",
+                    Token::GreaterEqual => ">=",
+                    Token::Less => "<",
+                    Token::LessEqual => "<=",
+                    Token::And => "&&",
+                    Token::Or => "||",
                     _ => "?",
                 };
                 format!("({} {} {})", l, op, r)
@@ -92,6 +101,9 @@ impl<'a> Evaluator<'a> {
                 Token::Number(n) => format!("{}", n),
                 Token::Unknown => "unknown".to_string(),
                 Token::String(s) => s.clone(),
+                Token::True => "true".to_string(),
+                Token::False => "false".to_string(),
+                Token::Partial => "partial".to_string(),
                 _ => format!("{:?}", value),
             },
             Expr::Variable { name } => {
@@ -173,8 +185,7 @@ impl<'a> Evaluator<'a> {
                 let val = self.eval_expr(*right)?;
                 match (operator, val) {
                     (Token::Minus, Value::Number(n)) => Ok(Value::Number(-n)),
-                    (Token::Not, Value::Bool(SKBool::True)) => Ok(Value::Bool(SKBool::False)),
-                    (Token::Not, Value::Bool(SKBool::False)) => Ok(Value::Bool(SKBool::True)),
+                    (Token::Bang, Value::Bool(b)) => Ok(Value::Bool(logic::not(b))),
                     _ => Err("Invalid unary operation".to_string()),
                 }
             }
@@ -187,7 +198,7 @@ impl<'a> Evaluator<'a> {
                 for arg in arguments {
                     eval_args.push(self.eval_expr(arg)?);
                 }
-                match func_name.as_str() {    // more primitive functions to be added here!
+                match func_name.as_str() {
                     "resolve" => {
                         if eval_args.len() != 1 { return Err("resolve() expects 1 arg".to_string()); }
                         match eval_args[0].clone() {
@@ -260,7 +271,7 @@ impl<'a> Evaluator<'a> {
                 match l {
                     Value::Number(n) if n != 0.0 => Ok(Value::Number(1.0)),
                     Value::Interval(min, max) if min > 0.0 || max < 0.0 => Ok(Value::Number(1.0)),
-                    _ => Ok(Value::Unknown), // Could be 0/0
+                    _ => Ok(Value::Unknown),
                 }
             }
 
@@ -305,7 +316,6 @@ impl<'a> Evaluator<'a> {
                 Ok(Value::Interval(a.min(b), a.max(b)))
             },
 
-            // Interval & Interval
             (Value::Interval(min1, max1), Token::Plus, Value::Interval(min2, max2)) => {
                 Ok(Value::Interval(min1 + min2, max1 + max2))
             },
@@ -319,40 +329,54 @@ impl<'a> Evaluator<'a> {
                     p.iter().copied().fold(f64::NEG_INFINITY, f64::max)
                 ))
             }
+
+            (Value::Number(a), operator, Value::Number(b)) => {
+                let op_str = match operator {
+                    Token::EqualEqual => "==",
+                    Token::BangEqual => "!=",
+                    Token::Greater => ">",
+                    Token::GreaterEqual => ">=",
+                    Token::Less => "<",
+                    Token::LessEqual => "<=",
+                    _ => return self.propagate_symbolic(left, op, right),
+                };
+                Ok(Value::Bool(logic::compare_nums(a, b, op_str)))
+            }
+
+            (Value::String(s1), Token::EqualEqual, Value::String(s2)) => {
+                Ok(Value::Bool(if s1 == s2 { SKBool::True } else { SKBool::False }))
+            }
+            (Value::String(s1), Token::BangEqual, Value::String(s2)) => {
+                Ok(Value::Bool(if s1 != s2 { SKBool::True } else { SKBool::False }))
+            }
+
+            (Value::Interval(min1, max1), operator, Value::Interval(min2, max2)) => {
+                let op_str = match operator {
+                    Token::Greater => ">",
+                    Token::Less => "<",
+                    Token::GreaterEqual => ">=",
+                    Token::LessEqual => "<=",
+                    Token::EqualEqual => "==",
+                    Token::BangEqual => "!=",
+                    _ => return self.propagate_symbolic(left, op, right),
+                };
+                Ok(Value::Bool(logic::compare_intervals(min1, max1, min2, max2, op_str)))
+            }
+
+            (Value::Interval(min, max), operator, Value::Number(n)) => {
+                self.apply_binary(Value::Interval(min, max), operator, Value::Interval(n, n))
+            }
+            (Value::Number(n), operator, Value::Interval(min, max)) => {
+                self.apply_binary(Value::Interval(n, n), operator, Value::Interval(min, max))
+            }
+
+            (Value::Bool(a), Token::And, Value::Bool(b)) => Ok(Value::Bool(logic::and(a, b))),
+            (Value::Bool(a), Token::Or, Value::Bool(b)) => Ok(Value::Bool(logic::or(a, b))),
             
-            (Value::Symbolic { expression: e1, is_quiet: q1 }, _, val2) => {
-                Ok(Value::Symbolic {
-                    expression: Box::new(Expr::Binary {
-                        left: e1,
-                        operator: op,
-                        right: Box::new(Expr::Literal { value: self.value_to_token(val2) }),
-                    }),
-                    is_quiet: q1,
-                })
-            }
-            (val1, _, Value::Symbolic { expression: e2, is_quiet: q2 }) => {
-                Ok(Value::Symbolic {
-                    expression: Box::new(Expr::Binary {
-                        left: Box::new(Expr::Literal { value: self.value_to_token(val1) }),
-                        operator: op,
-                        right: e2,
-                    }),
-                    is_quiet: q2,
-                })
+            (Value::Symbolic { .. }, _, _) | (_, _, Value::Symbolic { .. }) | (Value::Unknown, _, _) | (_, _, Value::Unknown) => {
+                self.propagate_symbolic(left, op, right)
             }
 
-            (Value::Unknown, _, _) | (_, _, Value::Unknown) => {
-                Ok(Value::Symbolic {
-                    expression: Box::new(Expr::Binary {
-                        left: Box::new(Expr::Literal { value: self.value_to_token(left) }),
-                        operator: op,
-                        right: Box::new(Expr::Literal { value: self.value_to_token(right) }),
-                    }),
-                    is_quiet: false,
-                })
-            }
-
-            // String Concatenation!
             (Value::String(mut s1), Token::Plus, Value::String(s2)) => {
                 s1.push_str(&s2);
                 Ok(Value::String(s1))
@@ -360,5 +384,22 @@ impl<'a> Evaluator<'a> {
 
             _ => Err("Operation not supported for these types".to_string()),
         }
+    }
+
+    fn propagate_symbolic(&self, left: Value, op: Token, right: Value) -> Result<Value, String> {
+        let is_quiet = match (&left, &right) {
+            (Value::Symbolic { is_quiet: q, .. }, _) => *q,
+            (_, Value::Symbolic { is_quiet: q, .. }) => *q,
+            _ => false,
+        };
+
+        Ok(Value::Symbolic {
+            expression: Box::new(Expr::Binary {
+                left: Box::new(Expr::Literal { value: self.value_to_token(left) }),
+                operator: op,
+                right: Box::new(Expr::Literal { value: self.value_to_token(right) }),
+            }),
+            is_quiet,
+        })
     }
 }

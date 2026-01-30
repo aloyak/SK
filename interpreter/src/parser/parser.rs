@@ -111,7 +111,7 @@ impl Parser {
     }
 
     pub fn expression(&mut self) -> Result<Expr, String> {
-        self.addition()
+        self.logic_or()
     }
 
     fn addition(&mut self) -> Result<Expr, String> {
@@ -120,6 +120,62 @@ impl Parser {
         while self.match_any(&[Token::Plus, Token::Minus]) {
             let operator = self.previous().token.clone();
             let right = self.multiplication()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+        Ok(expr)
+    }
+
+    fn logic_or(&mut self) -> Result<Expr, String> {
+        let mut expr = self.logic_and()?;
+        while self.match_token(Token::Or) {
+            let operator = self.previous().token.clone();
+            let right = self.logic_and()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+        Ok(expr)
+    }
+
+    fn logic_and(&mut self) -> Result<Expr, String> {
+        let mut expr = self.equality()?;
+        while self.match_token(Token::And) {
+            let operator = self.previous().token.clone();
+            let right = self.equality()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+        Ok(expr)
+    }
+
+    fn equality(&mut self) -> Result<Expr, String> {
+        let mut expr = self.comparison()?;
+        while self.match_any(&[Token::EqualEqual, Token::BangEqual]) {
+            let operator = self.previous().token.clone();
+            let right = self.comparison()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+        Ok(expr)
+    }
+
+    fn comparison(&mut self) -> Result<Expr, String> {
+        let mut expr = self.addition()?;
+        while self.match_any(&[Token::Greater, Token::GreaterEqual, Token::Less, Token::LessEqual]) {
+            let operator = self.previous().token.clone();
+            let right = self.addition()?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
@@ -162,7 +218,7 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Expr, String> {
-        if self.match_any(&[Token::Not, Token::Minus]) {
+        if self.match_any(&[Token::Bang, Token::Minus]) {
             let operator = self.previous().token.clone();
             let right = self.unary()?;
             return Ok(Expr::Unary { operator, right: Box::new(right) });

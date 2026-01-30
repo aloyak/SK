@@ -29,31 +29,35 @@ pub enum Token {
     Comma,
 
     // Operators & Symbols
-    Assign,      // =
-    Arrow,       // ->
-    Plus,        // +
-    Minus,       // -
-    Star,        // *
-    Slash,       // /
-    Caret,       // ^
-    RangeSep,    // ..
+    Assign,
+    Arrow,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Caret,
+    RangeSep,
     
     // Delimiters
-    LParen,      // (
-    RParen,      // )
-    LBracket,    // [
-    RBracket,    // ]
-    LBrace,      // {
-    RBrace,      // }
-    Quote,       // Either " or '
+    LParen,
+    RParen,
+    LBracket,
+    RBracket,
+    LBrace,
+    RBrace,
+    Quote,
 
-    Greater,     // >
-    Less,        // <
-    GreaterEqual,// >=
-    LessEqual,   // <=
-    Equal,       // ==
-    NotEqual,    // !=
-    Not,         // !
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+    
+    EqualEqual,
+    BangEqual,
+    
+    And,
+    Or,
+    Bang,
 
     // Knowledge Operators
     Possible,
@@ -194,7 +198,7 @@ impl Lexer {
             }
 
             '=' => {
-                if self.match_char('=') { Ok(Some(Token::Equal)) } 
+                if self.match_char('=') { Ok(Some(Token::EqualEqual)) } 
                 else { Ok(Some(Token::Assign)) }
             }
             '-' => {
@@ -216,8 +220,16 @@ impl Lexer {
                 else { Ok(Some(Token::Less)) }
             }
             '!' => {
-                if self.match_char('=') { Ok(Some(Token::NotEqual)) } 
-                else { Ok(Some(Token::Not)) }
+                if self.match_char('=') { Ok(Some(Token::BangEqual)) } 
+                else { Ok(Some(Token::Bang)) }
+            }
+            '&' => {
+                if self.match_char('&') { Ok(Some(Token::And)) }
+                else { Err("Expected '&' after '&'".to_string()) }
+            }
+            '|' => {
+                if self.match_char('|') { Ok(Some(Token::Or)) }
+                else { Err("Expected '|' after '|'".to_string()) }
             }
 
             // Whitespace

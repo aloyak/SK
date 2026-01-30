@@ -1,0 +1,28 @@
+print("a" == "a")
+
+print(true && false)
+print(true || false)
+print(!partial)
+print(true && partial)
+print(false && partial)
+
+print(10 > 5)
+print(10 <= 5)
+print(10 == 10)
+print(10 != 10)
+
+let stable = [10..20]
+let low = [1..5]
+let overlap = [15..25]
+
+print(stable > low)
+print(stable < low)
+print(stable > overlap)
+print(stable == stable)
+
+print(5 + 5 == 10 && 2 * 3 < 7)
+print(100 / 2 > 25 || false)
+
+symbolic x = unknown
+let condition = x > 10
+print(condition)

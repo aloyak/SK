@@ -4,6 +4,8 @@ symbolic a = x + 5
 quiet b = x + 5
 let c = x + 5
 
+print("Variable types: " + kind(a) + ", " + kind(b) + ", " + kind(c))
+
 print(a)         
 print(resolve(a))
 
