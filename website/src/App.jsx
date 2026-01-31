@@ -18,7 +18,18 @@ const THEMES = {
 
 function App() {
   const [page, setPage] = useState('about');
-  const [code, setCode] = useState('// The SK Programming Language \nprint("Hello, World!")');
+  const [code, setCode] = useState(
+    '// The SK Programming Language\n' + 
+    '\n' +
+    'print("Hello, World!")\n' +
+    '\n' +
+    'let variable = [0..10]\n' +
+    'print("Rate this language from " + str(variable) + "!")\n' +
+    '\n' +
+    '\n' +
+    '// Find many examples to test at: \n' +
+    '// https://github.com/AlmartDev/SK/tree/main/interpreter/examples\n'
+  );
   const [output, setOutput] = useState('Run the code to see the output');
   const [outputWidth, setOutputWidth] = useState(700);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -62,8 +73,12 @@ function App() {
     monaco.languages.setMonarchTokensProvider('sk', {
       tokenizer: {
         root: [
-          [/\b(fn|return|if|else|while|for)\b/, 'keyword'],
-          [/\b(print)\b/, 'custom-print'],
+          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|while|for)\b/, 'keyword'],
+          [/\b(certain|possible|impossible|known)\b/, 'builtins'],
+          [/\b(intersect|union|mid|width)\b/, 'builtins'],
+          [/panic!/, 'builtins'],
+          [/\b(print|input|str|num|kind|resolve)\b/, 'builtins'],
+          [/\b(true|false|partial)\b/, 'booleans'],
           [/\/\/.*$/, 'comment'],
           [/"[^"]*"/, 'string'],
           [/\d+/, 'number'],
@@ -75,7 +90,8 @@ function App() {
       inherit: true,
       rules: [
         { token: 'keyword', foreground: 'cba6f7', fontStyle: 'bold' },
-        { token: 'custom-print', foreground: '89b4fa' },
+        { token: 'builtins', foreground: '89b4fa' },
+        { token: 'booleans', foreground: 'b5c9e8' },
         { token: 'comment', foreground: '6c7086', fontStyle: 'italic' },
         { token: 'string', foreground: 'a6e3a1' },
         { token: 'number', foreground: 'fab387' },
@@ -120,8 +136,26 @@ function App() {
   const handleRun = async () => {
     setCommand('SK main.sk');
     setOutput('Running...');
+
+    const inputMatches = code.match(/input\(.*?\)/g) || [];
+    const userInputs = [];
+
+    if (inputMatches.length > 0) {
+      for (let i = 0; i < inputMatches.length; i++) {
+        const val = window.prompt(`Input required (${i + 1}/${inputMatches.length}):\n${inputMatches[i]}`);
+        if (val === null) {
+          setOutput("Execution cancelled by user.");
+          return;
+        }
+        userInputs.push(val);
+      }
+    }
+
     try {
-      const res = await fetch('/api/eval', { method: 'POST', body: code });
+      const res = await fetch('/api/eval', { 
+        method: 'POST', 
+        body: JSON.stringify({ code, inputs: userInputs }) 
+      });
       setOutput(await res.text());
     } catch (err) {
       setOutput("Failed to connect to runner.");

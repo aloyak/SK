@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
@@ -9,38 +9,49 @@ const LOCAL_BINARY_PATH = path.join(process.cwd(), 'SK');
 
 export default async function handler(req, res) {
   try {
-    let activePath = REMOTE_BINARY_PATH;
+    const activePath = fs.existsSync(LOCAL_BINARY_PATH) ? LOCAL_BINARY_PATH : REMOTE_BINARY_PATH;
 
-    if (fs.existsSync(LOCAL_BINARY_PATH)) {
-      activePath = LOCAL_BINARY_PATH;
-    } else if (!fs.existsSync(REMOTE_BINARY_PATH)) {
+    if (activePath === REMOTE_BINARY_PATH && !fs.existsSync(REMOTE_BINARY_PATH)) {
       await downloadFile(BINARY_URL, REMOTE_BINARY_PATH);
     }
 
     fs.chmodSync(activePath, '755');
 
     if (req.method === 'GET') {
-      exec(`${activePath} --version`, (err, stdout, stderr) => {
-        const result = stdout || stderr;
-        res.status(200).send(result.trim() || "SK Interpreter Ready");
-      });
+      const child = spawn(activePath, ['--version']);
+      let result = '';
+      child.stdout.on('data', (data) => result += data);
+      child.stderr.on('data', (data) => result += data);
+      child.on('close', () => res.status(200).send(result.trim() || "SK Interpreter Ready"));
       return;
     }
 
     if (req.method === 'POST') {
+      const { code, inputs = [] } = JSON.parse(req.body);
       const tempFile = path.join('/tmp', `code-${Date.now()}.sk`);
-      fs.writeFileSync(tempFile, req.body);
+      fs.writeFileSync(tempFile, code);
 
-      exec(`${activePath} ${tempFile}`, (err, stdout, stderr) => {
+      const child = spawn(activePath, [tempFile]);
+      let output = '';
+      let error = '';
+
+      if (inputs.length > 0) {
+        inputs.forEach(val => child.stdin.write(val + "\n"));
+        child.stdin.end();
+      }
+
+      child.stdout.on('data', (data) => output += data);
+      child.stderr.on('data', (data) => error += data);
+
+      const timeout = setTimeout(() => {
+        child.kill();
+        if (!res.writableEnded) res.status(200).send(output + error + "\n[Execution Timed Out]");
+      }, 5000);
+
+      child.on('close', () => {
+        clearTimeout(timeout);
         if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
-        
-        const combinedOutput = stdout + stderr;
-        
-        if (err && !combinedOutput) {
-          return res.status(200).send(`Process Error: ${err.message}`);
-        }
-
-        res.status(200).send(combinedOutput || "Execution finished (no output).");
+        if (!res.writableEnded) res.status(200).send(output + error);
       });
     }
   } catch (err) {
