@@ -3,6 +3,10 @@
   <h1 style="font-size: 3rem; margin-top: 10px;">The SK Programming Language</h1>
 </div>
 
+[SK-Lang Website + web IDE](https://sk-lang.vercel.app)
+
+[Crates.io](https://crates.io/crates/sk-lang)
+
 ## Overview
 
 SK is a conceptual programming language designed to handle incomplete, approximate, or partially known information as first-class entities. Unlike traditional languages, SK does **not assume all variables have exact values**. Instead, it tracks uncertainty explicitly throughout calculations, decisions, and control flow.  
