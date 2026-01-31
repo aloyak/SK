@@ -7,3 +7,4 @@ interpreter/target
 interpreter/*.lock
 
 *.vsix
+.vercel

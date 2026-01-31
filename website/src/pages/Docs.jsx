@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Hash, ChevronRight, FileText, AlertCircle, Terminal, Folder } from 'lucide-react';
+import { Hash, ChevronRight, FileText, AlertCircle, Folder } from 'lucide-react';
 import { Marked } from 'marked';
 import { markedHighlight } from "marked-highlight";
 import hljs from 'highlight.js';
@@ -13,12 +13,7 @@ const markedInstance = new Marked(
       return hljs.highlight(code, { language }).value;
     }
   })
-);
-
-markedInstance.setOptions({
-  gfm: true,
-  breaks: true,
-});
+).setOptions({ gfm: true, breaks: true });
 
 const markdownFiles = import.meta.glob('/docs/**/*.md', { query: '?raw', import: 'default' });
 
@@ -28,49 +23,40 @@ const Docs = ({ theme, setPage }) => {
   const [displayTitle, setDisplayTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  const formatFileName = (path) => path.split('/').pop().replace('.md', '').replace(/[-_]/g, ' ');
+
   const categories = useMemo(() => {
     const groups = {};
     Object.keys(markdownFiles).forEach((path) => {
       const parts = path.split('/');
       const category = parts.length > 3 ? parts[parts.length - 2] : 'General';
-      if (!groups[category]) groups[category] = [];
-      groups[category].push(path);
+      (groups[category] = groups[category] || []).push(path);
     });
 
-    return Object.keys(groups)
-      .sort((a, b) => {
-        if (a === 'Start') return -1;
-        if (b === 'Start') return 1;
-        return a.localeCompare(b);
-      })
-      .reduce((acc, key) => {
-        acc[key] = groups[key];
-        return acc;
-      }, {});
+    return Object.fromEntries(
+      Object.entries(groups).sort(([a], [b]) => 
+        a === 'Start' ? -1 : b === 'Start' ? 1 : a.localeCompare(b)
+      )
+    );
   }, []);
 
   useEffect(() => {
-    const handleInternalLinks = (e) => {
+    const handleLinks = (e) => {
       const link = e.target.closest('a');
-      if (link && link.getAttribute('href')?.startsWith('#page-')) {
+      const href = link?.getAttribute('href');
+      if (href?.startsWith('#page-')) {
         e.preventDefault();
-        const targetPage = link.getAttribute('href').replace('#page-', '');
-        if (setPage) setPage(targetPage);
+        setPage?.(href.replace('#page-', ''));
       }
     };
-
-    document.addEventListener('click', handleInternalLinks);
-    return () => document.removeEventListener('click', handleInternalLinks);
+    document.addEventListener('click', handleLinks);
+    return () => document.removeEventListener('click', handleLinks);
   }, [setPage]);
 
   useEffect(() => {
     if (!activePath) {
-      const categoryKeys = Object.keys(categories);
-      if (categoryKeys.length > 0) {
-        const firstCategory = categoryKeys[0];
-        const firstFile = categories[firstCategory][0];
-        setActivePath(firstFile);
-      }
+      const firstFile = Object.values(categories)[0]?.[0];
+      if (firstFile) setActivePath(firstFile);
     }
   }, [categories, activePath]);
 
@@ -81,68 +67,47 @@ const Docs = ({ theme, setPage }) => {
     markdownFiles[activePath]()
       .then((text) => {
         const h1Match = text.match(/^#\s+(.*)$/m);
-        const extractedTitle = h1Match ? h1Match[1] : formatFileName(activePath);
-        const bodyWithoutTitle = h1Match ? text.replace(h1Match[0], '') : text;
-
-        setDisplayTitle(extractedTitle);
-        const htmlContent = markedInstance.parse(bodyWithoutTitle);
-        setContent(htmlContent);
-        setIsLoading(false);
+        setDisplayTitle(h1Match ? h1Match[1] : formatFileName(activePath));
+        setContent(markedInstance.parse(h1Match ? text.replace(h1Match[0], '') : text));
       })
-      .catch((err) => {
-        console.error("Markdown Error:", err);
-        setContent('');
-        setIsLoading(false);
-      });
+      .catch(() => setContent(''))
+      .finally(() => setIsLoading(false));
   }, [activePath]);
-
-  const formatFileName = (path) => {
-    return path.split('/').pop().replace('.md', '').replace(/[-_]/g, ' ');
-  };
 
   if (!theme) return null;
 
   return (
-    <div className="flex-1 w-full overflow-y-auto scrollbar-hide bg-[#050508] py-16">
+    <div className="flex-1 w-full overflow-y-auto scrollbar-hide bg-[#050508] py-16 text-left">
       <div className="max-w-[75%] mx-auto grid grid-cols-4 gap-12">
         <aside className="col-span-1">
           <div className="sticky top-10 flex flex-col gap-10">
-            <div className="flex items-center gap-3">
-              <h2 className="text-white font-black uppercase tracking-tighter text-xl text-left">Docs</h2>
-            </div>
-            
-            <nav className="flex flex-col gap-8 text-left">
+            <h2 className="text-white font-black uppercase tracking-tighter text-xl">Docs</h2>
+            <nav className="flex flex-col gap-8">
               {Object.entries(categories).map(([category, paths]) => (
                 <div key={category} className="flex flex-col gap-2">
                   <div className="flex items-center gap-2 px-2 mb-1 opacity-40">
                     <Folder size={12} className="text-white" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                      {category}
-                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">{category}</span>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    {paths.map((path) => (
-                      <button
-                        key={path}
-                        onClick={() => setActivePath(path)}
-                        className={`flex items-center gap-3 w-full text-left px-4 py-2.5 rounded-xl transition-all duration-200 group ${
-                          activePath === path 
-                            ? 'bg-white text-black font-bold shadow-lg scale-[1.02]' 
-                            : 'text-slate-400 hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        <Hash size={14} className={activePath === path ? 'text-black' : 'text-slate-600'} />
-                        <span className="text-sm capitalize">{formatFileName(path)}</span>
-                      </button>
-                    ))}
-                  </div>
+                  {paths.map((path) => (
+                    <button
+                      key={path}
+                      onClick={() => setActivePath(path)}
+                      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group ${
+                        activePath === path ? 'bg-white text-black font-bold shadow-lg scale-[1.02]' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Hash size={14} className={activePath === path ? 'text-black' : 'text-slate-600'} />
+                      <span className="text-sm capitalize">{formatFileName(path)}</span>
+                    </button>
+                  ))}
                 </div>
               ))}
             </nav>
           </div>
         </aside>
 
-        <main className="col-span-3 text-left">
+        <main className="col-span-3">
           {isLoading ? (
             <div className="animate-pulse space-y-8">
               <div className="h-14 w-1/2 bg-white/5 rounded-2xl" />
@@ -154,15 +119,9 @@ const Docs = ({ theme, setPage }) => {
                 <FileText size={14} className="text-white" />
                 <span className="text-white text-xs font-bold uppercase tracking-widest">Docs</span>
                 <ChevronRight size={12} className="text-white" />
-                <span className="text-white text-xs font-bold uppercase tracking-widest">
-                  {formatFileName(activePath)}
-                </span>
+                <span className="text-white text-xs font-bold uppercase tracking-widest">{formatFileName(activePath)}</span>
               </div>
-
-              <h1 className="text-6xl font-black text-white mb-10 uppercase tracking-tighter leading-none">
-                {displayTitle}
-              </h1>
-
+              <h1 className="text-6xl font-black text-white mb-10 uppercase tracking-tighter leading-none">{displayTitle}</h1>
               <div className={`p-12 rounded-[2rem] border-2 ${theme.border} ${theme.card} bg-opacity-50 shadow-2xl overflow-hidden`}>
                 <article className="prose-custom select-text">
                   <div dangerouslySetInnerHTML={{ __html: content }} />

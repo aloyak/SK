@@ -1,6 +1,6 @@
 import Editor from '@monaco-editor/react';
 
-const IDE = ({ code, setCode, output, outputWidth, startResizing, handleEditorWillMount, theme }) => {
+const IDE = ({ code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme }) => {
   return (
     <div className="flex-1 flex gap-2 overflow-hidden pb-6">
       <div className={`flex-1 flex flex-col ${theme.card} border-2 ${theme.border} rounded-[2rem] overflow-hidden shadow-2xl`}>
@@ -49,16 +49,12 @@ const IDE = ({ code, setCode, output, outputWidth, startResizing, handleEditorWi
           <div className="flex flex-col gap-4 p-10">
             <div className="flex gap-3 text-lg">
               <span className="text-[#98c379] font-bold">➜</span>
-              <span className="text-slate-600 font-bold">sk file.sk</span>
+              <span className="text-slate-600 font-bold">{command}</span>
             </div>
             
             <pre className="text-3xl text-[#abb2bf] font-medium whitespace-pre-wrap leading-relaxed">
               {output}
             </pre>
-            
-            <div className="flex gap-2 animate-pulse">
-              <span className="text-white font-bold text-3xl">█</span>
-            </div>
           </div>
         </div>
       </div>

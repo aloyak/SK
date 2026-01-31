@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from './components/Header';
 import IDE from './pages/IDE';
 import About from './pages/About';
@@ -21,9 +21,41 @@ function App() {
   const [code, setCode] = useState('// The SK Programming Language \nprint("Hello, World!")');
   const [output, setOutput] = useState('Run the code to see the output');
   const [outputWidth, setOutputWidth] = useState(700);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [command, setCommand] = useState('SK --version');
+  
   const isResizing = useRef(false);
-
+  const fileInputRef = useRef(null);
   const t = THEMES.sk;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/eval');
+        setOutput(await res.text());
+        setIsInitialized(true);
+      } catch (err) {
+        console.error("Failed to init:", err);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (page === 'ide') {
+      setCommand('SK --version');
+      if (!isInitialized) setOutput('Loading interpreter...');
+    }
+  }, [page, isInitialized]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key === 's') { e.preventDefault(); handleDownload(); }
+      if (e.key === 'o') { e.preventDefault(); fileInputRef.current?.click(); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [code]);
 
   const handleEditorWillMount = (monaco) => {
     monaco.languages.register({ id: 'sk' });
@@ -38,90 +70,76 @@ function App() {
         ]
       }
     });
-
     monaco.editor.defineTheme('sk-theme', {
       base: 'vs-dark',
       inherit: true,
       rules: [
-        { token: 'keyword', foreground: 'c678dd' },
-        { token: 'custom-print', foreground: '98c379' },
-        { token: 'comment', foreground: '5c6370' },
-        { token: 'string', foreground: 'd19a66' },
+        { token: 'keyword', foreground: 'cba6f7', fontStyle: 'bold' },
+        { token: 'custom-print', foreground: '89b4fa' },
+        { token: 'comment', foreground: '6c7086', fontStyle: 'italic' },
+        { token: 'string', foreground: 'a6e3a1' },
+        { token: 'number', foreground: 'fab387' },
       ],
-      colors: {
-        'editor.background': '#0a0a0f',
-        'editor.lineHighlightBackground': '#00000000',
-        'editorCursor.foreground': '#ffffff',
-      }
+      colors: { 'editor.background': '#0a0a0f', 'editor.lineHighlightBackground': '#1e1e2e10' }
     });
   };
 
   const startResizing = () => {
     isResizing.current = true;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'col-resize';
-  };
-
-  const stopResizing = () => {
-    isResizing.current = false;
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'default';
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isResizing.current) return;
-    const newWidth = window.innerWidth - e.clientX;
-    if (newWidth > 150 && newWidth < window.innerWidth - 300) {
-      setOutputWidth(newWidth);
-    }
+    const onMove = (e) => {
+      if (!isResizing.current) return;
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 150 && newWidth < window.innerWidth - 300) setOutputWidth(newWidth);
+    };
+    const onUp = () => {
+      isResizing.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   };
 
   const handleDownload = () => {
-    const element = document.createElement("a");
-    const file = new Blob([code], {type: 'text/plain'});
-    element.href = URL.createObjectURL(file);
-    element.download = "main.sk";
-    document.body.appendChild(element);
-    element.click();
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = Object.assign(document.createElement("a"), { href: url, download: "main.sk" });
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setCode(e.target.result);
-      reader.readAsText(file);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setCode(ev.target.result);
+    reader.readAsText(file);
+    e.target.value = null;
+  };
+
+  const handleRun = async () => {
+    setCommand('SK main.sk');
+    setOutput('Running...');
+    try {
+      const res = await fetch('/api/eval', { method: 'POST', body: code });
+      setOutput(await res.text());
+    } catch (err) {
+      setOutput("Failed to connect to runner.");
     }
+  };
+
+  const PAGES = {
+    ide: <IDE {...{code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme: t}} />,
+    about: <About theme={t} setPage={setPage} />,
+    docs: <Docs theme={t} setPage={setPage} />,
+    basics: <Basics theme={t} />
   };
 
   return (
     <div className={`h-screen flex flex-col ${t.bg} font-sans p-10 select-none`}>
-      <Header 
-        currentPage={page}
-        onRun={() => setOutput('Hello, World!')}
-        onDownload={handleDownload}
-        onUpload={handleUpload}
-        setPage={setPage}
-        theme={t}
-      />
-
-      {page === 'ide' && (
-        <IDE 
-          code={code}
-          setCode={setCode}
-          output={output}
-          outputWidth={outputWidth}
-          startResizing={startResizing}
-          handleEditorWillMount={handleEditorWillMount}
-          theme={t}
-        />
-      )}
-
-      {page === 'about' && <About theme={t} setPage={setPage} />}
-      {page === 'docs' && <Docs theme={t} setPage={setPage} />}
-      {page === 'basics' && <Basics theme={t} setPage={setPage} />}
+      <input type="file" ref={fileInputRef} onChange={handleUpload} className="hidden" accept=".sk" />
+      <Header currentPage={page} onRun={handleRun} onDownload={handleDownload} onUpload={() => fileInputRef.current?.click()} setPage={setPage} theme={t} />
+      {PAGES[page]}
     </div>
   );
 }
