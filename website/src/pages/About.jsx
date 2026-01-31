@@ -7,7 +7,7 @@ const About = ({ theme, setPage }) => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-10 animate-in fade-in duration-500">
       <img 
-        src="/assets/skicon.png" 
+        src="../../assets/skicon.png" 
         alt="SK Large Logo" 
         className="w-64 h-64 object-contain mb-12 drop-shadow-[0_0_32px_rgba(226,122,122,0.3)]" 
       />

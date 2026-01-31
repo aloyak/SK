@@ -12,7 +12,7 @@ const Header = ({ currentPage, onRun, onDownload, onUpload, setPage, theme }) =>
   return (
     <header className="h-10 grid grid-cols-3 items-center px-1 mb-8">
       <div className="flex items-center gap-4 cursor-pointer" onClick={() => setPage('about')}>
-        <img src="/assets/skicon2.png" alt="SK Logo" className="w-12 h-12 object-contain" />
+        <img src="../../assets/skicon2.png" alt="SK Logo" className="w-12 h-12 object-contain" />
         {currentPage === 'ide' && (
           <span className="text-sm text-slate-800 mt-2 font-black tracking-[0.3em] animate-in fade-in duration-300">
             IDE v0.1.1

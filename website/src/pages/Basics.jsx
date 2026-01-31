@@ -14,22 +14,22 @@ const Basics = ({ theme }) => {
     { 
       title: "Special Variables", 
       desc: "Handles known, unknown and partially known variables",
-      img: "/assets/code/vars.png"
+      img: "../../assets/code/vars.png"
     },
     { 
       title: "Symbolic Variables", 
       desc: "Handles formulas that may depend on unknowns or intervals",
-      img: "/assets/code/symbolics.png"
+      img: "../../assets/code/symbolics.png"
     },
     { 
       title: "Operators", 
       desc: "All arithmetic operators propagate uncertainty",
-      img: "/assets/code/operators.png"
+      img: "../../assets/code/operators.png"
     },
     { 
       title: "Knowledge Operators", 
       desc: "Builtin functions to work with uncertainty",
-      img: "/assets/code/knowledge_ops.png"
+      img: "../../assets/code/knowledge_ops.png"
     },
     
   ];
