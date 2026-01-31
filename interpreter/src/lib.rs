@@ -40,6 +40,17 @@ impl SKInterpreter {
         evaluator.evaluate(ast)
     }
 
+    pub fn execute_string(&mut self, source: String) -> Result<Value, String> {
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize()?;
+
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse()?;
+
+        let mut evaluator = Evaluator::new(self.env.clone());
+        evaluator.evaluate(ast)
+    }
+
     fn _debug_ast(&self, program: &Vec<Stmt>) {
         println!("--- Abstract Syntax Tree ---");
         for (i, stmt) in program.iter().enumerate() {

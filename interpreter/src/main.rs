@@ -1,7 +1,8 @@
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process;
-use log;
+
+use rustyline::DefaultEditor;
 
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -21,6 +22,47 @@ fn run(path: &Path) {
         Err(e) => {
             log::error!("Runtime Error: {}", e);
             process::exit(1)
+        }
+    }
+}
+
+fn run_repl() {
+    let mut interpreter = SKInterpreter::new();
+    let mut rl = DefaultEditor::new().expect("Failed to create editor");
+    
+    println!("SK REPL ({}). Type 'exit' to quit.", VERSION);
+
+    loop {
+        let readline = rl.readline(">> ");
+        
+        match readline {
+            Ok(line) => {
+                let source = line.trim();
+                
+                if source == "exit" {
+                    break;
+                }
+                
+                if source.is_empty() {
+                    continue;
+                }
+
+                let _ = rl.add_history_entry(source);
+
+
+                match interpreter.execute_string(source.to_string()) {
+                    Ok(value) => {
+                        if value != Value::None {
+                            println!("{}", value);
+                        }
+                    }
+                    Err(e) => eprintln!("Error: {}", e),
+                }
+            },
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
         }
     }
 }
@@ -47,8 +89,8 @@ fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
-        help();
-        process::exit(1);
+        run_repl();
+        return;
     }
 
     if args.contains(&"--version".to_string()) {
@@ -73,5 +115,7 @@ fn main() {
 
 fn help() {
     println!("{} - {}", NAME, VERSION);
-    println!("usage: {} <filename>", NAME);
+    println!("usage: {} : starts a repl interpreter.", NAME);
+    println!("       {} <filename> : runs the file at the given path.", NAME);
+    println!("       {} --version : shows interpreter's version.", NAME);
 }

@@ -313,6 +313,10 @@ impl Evaluator {
     }
 
     fn apply_binary(&mut self, left: Value, op: Token, right: Value) -> Result<Value, String> {
+        if left == Value::Unknown || right == Value::Unknown {
+            return Ok(Value::Unknown);
+        }
+
         let is_symbolic = left.is_symbolic_or_unknown() || right.is_symbolic_or_unknown();
 
         let res = match op {
