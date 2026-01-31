@@ -6,6 +6,4 @@ TODO
 interpreter/target
 interpreter/*.lock
 
-website
-
 *.vsix

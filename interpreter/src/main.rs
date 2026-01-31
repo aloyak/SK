@@ -4,7 +4,7 @@ use std::process;
 
 use rustyline::DefaultEditor;
 
-const NAME: &str = env!("CARGO_PKG_NAME");
+const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 use sk_lang::SKInterpreter;
@@ -123,4 +123,5 @@ fn help() {
     println!("usage: {} : starts a repl interpreter.", NAME);
     println!("       {} <filename> : runs the file at the given path.", NAME);
     println!("       {} --version : shows interpreter's version.", NAME);
+    println!("       {} --help : shows this dialog.", NAME);
 }
