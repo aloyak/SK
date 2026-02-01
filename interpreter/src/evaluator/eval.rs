@@ -1,6 +1,6 @@
 use crate::parser::ast::{Expr, IfPolicy, Stmt};
 use crate::parser::lexer::{Token, TokenSpan};
-use crate::core::value::{Value, SKBool};
+use crate::core::value::{Function, SKBool, Value};
 use crate::core::logic;
 use crate::core::error::Error;
 use crate::evaluator::env::Environment;
@@ -107,6 +107,11 @@ impl Evaluator {
             Stmt::Expression { expression } => self.eval_expr(expression),
             Stmt::If { condition, policy, then_branch, elif_branch, else_branch } => {
                 self.eval_if_chain(condition, *then_branch, &elif_branch, &else_branch, policy)
+            }
+            Stmt::Function { name, params, body } => {
+                let function = Value::Function(Function { params, body, closure: self.env.clone() });
+                self.env.borrow_mut().define(name.token_to_string(), function);
+                Ok(Value::None)
             }
         }
     }
@@ -336,23 +341,19 @@ impl Evaluator {
             }
 
             Expr::Grouping { expression } => self.eval_expr(*expression),
-            Expr::Call {
-                callee,
-                arguments,
-                paren,
-            } => {
+            Expr::Call { callee, arguments, paren } => {
                 let callee_val = self.eval_expr(*callee)?;
-                let mut args = Vec::new();
-                for arg in arguments {
-                    args.push(self.eval_expr(arg)?);
+
+                let mut eval_args = Vec::new();
+                for arg in &arguments {
+                    eval_args.push(self.eval_expr(arg.clone())?);
                 }
+
                 match callee_val {
                     Value::NativeFn(func) => {
-                        match func(args, self) {
+                        match func(eval_args, self) {
                             Ok(v) => Ok(v),
                             Err(mut e) => {
-                                // If the error came from a builtin without location info,
-                                // attach the function call location.
                                 if matches!(e.token.token, Token::Unknown) {
                                     e.token = paren;
                                 }
@@ -360,6 +361,22 @@ impl Evaluator {
                             }
                         }
                     },
+                    Value::Function(func) => {
+                        if eval_args.len() != func.params.len() {
+                            return Err(Error {
+                                token: paren,
+                                message: format!("Expected {} args, got {}", func.params.len(), eval_args.len()),
+                            });
+                        }
+
+                        let mut call_env = Environment::new_enclosed(func.closure.clone());
+
+                        for (param_token, arg_value) in func.params.iter().zip(eval_args) {
+                            call_env.define(param_token.token_to_string(), arg_value);
+                        }
+                        
+                        self.execute_block(func.body, call_env)
+                    }
                     _ => Err(Error {
                         token: paren,
                         message: format!("Value '{}' is not callable", callee_val),

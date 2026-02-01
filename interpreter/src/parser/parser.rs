@@ -26,6 +26,8 @@ impl Parser {
         Ok(statements)
     }
 
+    // --- Declarations ---
+
     fn declaration(&mut self) -> Result<Stmt, Error> {
         match self.peek().token {
             Token::Let => {
@@ -56,6 +58,31 @@ impl Parser {
         }
     }
 
+    fn function_declaration(&mut self) -> Result<Stmt, Error> {
+        let name = self.consume_identifier("Expect function name.")?;
+
+        self.consume(Token::LParen, "Expect '(' after function name.")?;
+        
+        let mut parameters = Vec::new();
+        if !self.check(&Token::RParen) {
+            loop {
+                parameters.push(self.consume_identifier("Expect parameter name.")?);
+                if !self.match_token(Token::Comma) { break; }
+            }
+        }
+        
+        self.consume(Token::RParen, "Expect ')' after parameters.")?;
+        self.consume(Token::LBrace, "Expect '{' before function body.")?;
+        
+        let body = self.block()?; 
+
+        Ok(Stmt::Function {
+            name,
+            params: parameters,
+            body,
+        })
+    }
+
     fn symbolic_declaration(&mut self, is_quiet: bool) -> Result<Stmt, Error> {
         let name = self.consume_identifier("Expect variable name.")?;
         self.consume(Token::Assign, "Expect '=' after name.")?;
@@ -80,6 +107,55 @@ impl Parser {
         })
     }
 
+    fn let_declaration(&mut self) -> Result<Stmt, Error> {
+        let name = self.consume_identifier("Expect variable name.")?;
+        self.consume(Token::Assign, "Expect '=' after variable name.")?;
+        
+        let initializer = self.expression()?; 
+        
+        self.end_stmt()?;
+        Ok(Stmt::Let { name, initializer })
+    }
+
+    
+    fn block(&mut self) -> Result<Vec<Stmt>, Error> {
+        let mut statements = Vec::new();
+        
+        while !self.check(&Token::RBrace) && !self.is_at_end() {
+            if self.match_token(Token::NewLine) {
+                continue;
+            }
+            statements.push(self.declaration()?);
+        }
+        
+        self.consume(Token::RBrace, "Expect '}' after block.")?;
+        Ok(statements)
+    }
+    
+    
+    // --- Statements ---
+    
+    fn statement(&mut self) -> Result<Stmt, Error> {
+        if self.match_token(Token::Function) {
+            return self.function_declaration()
+        }
+
+        if self.match_token(Token::LBrace) {
+            return Ok(Stmt::Block { statements: self.block()? });
+        }
+        
+        if self.peek_type(Token::Identifier(String::new())) && self.peek_next_type(Token::Assign) {
+            let name = self.advance().clone(); 
+            self.advance(); // consume '='
+            let value = self.expression()?;
+            self.end_stmt()?;
+            return Ok(Stmt::Assign { name, value });
+        }
+        let expr = self.expression()?;
+        self.end_stmt()?;
+        Ok(Stmt::Expression { expression: expr })
+    }
+    
     fn if_statement(&mut self) -> Result<Stmt, Error> {
         let condition = self.expression()?;
         
@@ -120,46 +196,11 @@ impl Parser {
         })
     }
 
-    fn let_declaration(&mut self) -> Result<Stmt, Error> {
-        let name = self.consume_identifier("Expect variable name.")?;
-        self.consume(Token::Assign, "Expect '=' after variable name.")?;
-        
-        let initializer = self.expression()?; 
-        
+    fn panic_statement(&mut self) -> Result<Stmt, Error> {
         self.end_stmt()?;
-        Ok(Stmt::Let { name, initializer })
+        Ok(Stmt::Panic)
     }
 
-    fn statement(&mut self) -> Result<Stmt, Error> {
-        if self.match_token(Token::LBrace) {
-            return Ok(Stmt::Block { statements: self.block()? });
-        }
-
-        if self.peek_type(Token::Identifier(String::new())) && self.peek_next_type(Token::Assign) {
-            let name = self.advance().clone(); 
-            self.advance(); // consume '='
-            let value = self.expression()?;
-            self.end_stmt()?;
-            return Ok(Stmt::Assign { name, value });
-        }
-        let expr = self.expression()?;
-        self.end_stmt()?;
-        Ok(Stmt::Expression { expression: expr })
-    }
-
-    fn block(&mut self) -> Result<Vec<Stmt>, Error> {
-        let mut statements = Vec::new();
-
-        while !self.check(&Token::RBrace) && !self.is_at_end() {
-            if self.match_token(Token::NewLine) {
-                continue;
-            }
-            statements.push(self.declaration()?);
-        }
-
-        self.consume(Token::RBrace, "Expect '}' after block.")?;
-        Ok(statements)
-    }
 
     pub fn expression(&mut self) -> Result<Expr, Error> {
         self.logic_or()
@@ -425,11 +466,6 @@ impl Parser {
             token: self.peek().clone(), 
             message: msg.to_string() 
         })
-    }
-
-    fn panic_statement(&mut self) -> Result<Stmt, Error> {
-        self.end_stmt()?;
-        Ok(Stmt::Panic)
     }
 
     fn peek_type(&self, t: Token) -> bool {

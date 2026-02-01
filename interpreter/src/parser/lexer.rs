@@ -23,7 +23,7 @@ pub enum Token {
     Str,
     Num,
     Panic,
-    Fn,
+    Function,
     Return,
     For,
     While,
@@ -86,6 +86,17 @@ pub struct TokenSpan {
     pub token: Token,
     pub line: usize,
     pub column: usize,
+}
+
+impl TokenSpan {
+    pub fn token_to_string(&self) -> String {
+        match &self.token {
+            Token::Identifier(s) => s.clone(),
+            Token::String(s) => s.clone(),
+            Token::Number(n) => n.to_string(),
+            _ => format!("{:?}", self.token)
+        }
+    }
 }
 
 pub fn tokenize(raw: String) -> Result<Vec<TokenSpan>, String> {
@@ -285,7 +296,7 @@ impl Lexer {
             "panic" => Token::Panic,  // The policy
             "print" => Token::Print,
             "input" => Token::Input,
-            "fn" => Token::Fn,
+            "fn" => Token::Function,
             "return" => Token::Return,
             "for" => Token::For,
             "while" => Token::While,

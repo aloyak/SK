@@ -1,0 +1,15 @@
+fn recursive(n) {
+    if n <= 10 {
+        print(n)
+        recursive(n + 1)
+    }
+}
+
+recursive(0)
+
+fn addUp(n) {
+    n * (n + 1) / 2 // No need for return
+}
+
+let result = addUp(50)
+print(result)

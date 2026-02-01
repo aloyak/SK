@@ -1,8 +1,12 @@
 use core::fmt;
-use crate::parser::ast::Expr;
+use crate::parser::ast::{Expr, Stmt};
 use crate::parser::lexer::{Token, TokenSpan};
 use crate::core::logic;
 use crate::core::error::Error;
+
+use crate::evaluator::env::Environment;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SKBool {
@@ -12,6 +16,13 @@ pub enum SKBool {
 }
 
 pub type NativeFn = fn(Vec<Value>, &mut crate::evaluator::eval::Evaluator) -> Result<Value, Error>;
+
+#[derive(Debug, Clone)]
+pub struct Function {
+    pub params: Vec<TokenSpan>,
+    pub body: Vec<Stmt>,
+    pub closure: Rc<RefCell<Environment>>, 
+}
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -25,6 +36,7 @@ pub enum Value {
         is_quiet: bool,
     },
     NativeFn(NativeFn),
+    Function(Function),
     None,
 }
 
@@ -294,6 +306,7 @@ impl fmt::Display for Value {
             Value::Symbolic { expression, .. } => write!(f, "{}", Self::format_expr(expression)),
             Value::Unknown => write!(f, "unknown"),
             Value::NativeFn(_) => write!(f, "<native fn>"),
+            Value::Function(_) => write!(f, "<function>"),
             Value::None => write!(f, "none"),
         }
     }
