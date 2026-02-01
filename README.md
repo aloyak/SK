@@ -3,9 +3,9 @@
   <h1 style="font-size: 3rem; margin-top: 10px;">The SK Programming Language</h1>
 </div>
 
-[SK-Lang Website + web IDE](https://sk-lang.vercel.app)
+* **[SK-Lang Website + web IDE + Documentation](https://sk-lang.vercel.app)**
 
-[Crates.io](https://crates.io/crates/sk-lang)
+* **[Crates.io](https://crates.io/crates/sk-lang)**
 
 ## Overview
 
@@ -13,18 +13,23 @@ SK is a conceptual programming language designed to handle incomplete, approxima
 
 The language is designed for **safer, more honest, and analyzable computation** in contexts where data may be noisy, incomplete, or evolving.
 
-## Rust Interpreter
+## Interpreter
 
-The final version of SK is in the works with a full scale Rust interpreter.
+The final version of SK is in the works with a full scale Rust interpreter, this interpreter can run files but also features a REPL mode. For more information on the language features and installation please take a look into the [docs](https://sk-lang.vercel.app).
+
+* Install the SK interpreter by running
 
 ```sh
-cargo build
-cargo run -- examples/test.sk # or ./SK test.sk, inside ./interpreter
+cargo install sk-lang
 ```
+
+* or download the latest binaries [here!](https://github.com/AlmartDev/SK/releases/latest) (currently Linux only)
+
+> Please consider taking a look to the docs here: [documentation](https://sk-lang.vercel.app)
 
 ## Python Prototype
 
-The SK prototype is implemented as a **Python-based prototype**. This allows experimenting with the core concepts of uncertain values, intervals, and symbolic expressions using Python classes and operator overloading. Variables such as `SValue`, `SSymbolic`, and their variants simulate the behavior of the language, while arithmetic operations automatically propagate uncertainty and generate symbolic expressions when operands are unknown or partially known. This approach provides a flexible environment to test and refine the semantics of SK before developing a full compiler or interpreter.
+SK started as a Python-based prototype. This is now deprecated.
 
 In order to run the python sk tests:
 
@@ -34,7 +39,7 @@ python3 sk.py <testname> # only after 'test-', inside ./python-prototype/
 
 ## License
 
-Please contact for license information, still in the works.
+This project is under the MIT License, please see ```LICENSE``` for more information!
 
 ## Core Concepts
 
@@ -44,32 +49,32 @@ SK supports several kinds of values:
 
 * **Known values** – exact, fully determined numbers or objects:
 
-```js
+```rs
 let n = 3       // n is 3
 ```
 
 * **Intervals** – ranges of possible numeric values:
 
-```js
+```rs
 let temperature = [18..24] // temperature can be any value between 18 and 24
 ```
 
 * **Unknown values** – undefined, but tracked:
 
-```js
+```rs
 unknown x
 ```
 
 * **Symbolic values** – formulas that may depend on unknowns or intervals:
 
-```js
+```rs
 symbolic area
 area = side^2
 ```
 
 * **Quiet symbolic values** – similar to symbolic, but it keeps the formula hidden
 
-```js
+```rs
 quiet volume
 volume = side^3
 ```
@@ -78,7 +83,7 @@ volume = side^3
 
 * All arithmetic operators propagate uncertainty:
 
-```js
+```rs
 let a = 2
 unknown b // 'Same as' let b = unknown
 
@@ -95,14 +100,14 @@ print(resolve(z)) // → 5
 
 * Zero propagation and Exponentiation edge cases:
 
-```js
+```rs
 0 * unknown = 0
 0 ^ 0 = 1 // YES it is, Okay?!
 ```
 
 * Knowledge Operators:
 
-```js
+```rs
 let val = [10..20]
 let check = val > 15
 
@@ -114,7 +119,7 @@ print(known(val))       // → false
 
 * Interval Operators:
 
-```js
+```rs
 let A = [0..10]
 let B = [5..15]
 
@@ -129,7 +134,7 @@ print(intersect(A, B)) // → [5..10]
 
 * Control flow respects uncertainty:
 
-```js
+```rs
 let x = [0..1]
 
 if x > 0.5 -> merge { // merge is an 'if policy'
@@ -146,7 +151,7 @@ if x > 0.5 -> merge { // merge is an 'if policy'
 
 * Scopes:
 
-```js
+```rs
 let a = 10
 
 {
@@ -164,11 +169,12 @@ print(b) // Error! 'b' is out of scope
 
 * Functions can accept uncertain values and propagate uncertainty:
 
-```js
+```rs
 fn addUp(n) {
-    let result = n * (n + 1) / 2
-    result  // returns are the last value given at end of block
+    n * (n + 1) / 2 // No 'return' keyword! it returns the last value of the block
 }
+
+let result = addUp(50)
 ```
 
 * Functions operate seamlessly on known, interval, unknown, and symbolic values.
@@ -185,27 +191,29 @@ fn addUp(n) {
 
 * Future SK syntax may allow constraints on unknown values:
 
-```js
+```rs
 unknown x > 0        // x is unknown but positive
 unknown y % 2 == 0   // y is unknown but even
 ```
 
-## VS Code Extensions
+## VS Code Extension
 
 SK has a language support extension for Visual Studio Code that includes small refinements to make working with SK easier.
 
-* Download the latest version in the Releases page or build the extension yourself inside ```extensions/vscode``` with:
+* Download the latest version in [here](https://github.com/AlmartDev/SK/releases/latest) or build the extension yourself inside ```extensions/vscode``` with:
 
 ```sh
-cd extensions/vscode
+cd extensions/vscode/
 vsce package
 ```
 
-* To install, inside vscode, go to Extensions (```Ctrl + Shift + X```) and select the option from the menu ```Install from VSIX...```
+* Then, inside vscode, go to Extensions (```Ctrl + Shift + X```) and select the option from the menu (```...```) -> ```Install from VSIX...```
 
 ## Hackclub
 
 Proud member of HackClub!
+
+<https://flavortown.hackclub.com/projects/8834>
 
 <div align="center">
   <a href="https://flavortown.hackclub.com/projects/8834">
@@ -215,5 +223,5 @@ Proud member of HackClub!
 
 ### Inspiration
 
-Took many cool ideas from this other project, ty! @cyteon
-[modu language github repo](https://github.com/cyteon/modu)
+Took many cool ideas from this other project, so ty! @cyteon
+[MODU Programming Language](https://github.com/cyteon/modu)
