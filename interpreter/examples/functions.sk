@@ -1,14 +1,14 @@
-fn recursive(n) {
-    if n <= 10 {
-        print(n)
-        recursive(n + 1)
-    }
+fn fibonacci(n, previous, current) {
+    if n > 0 {
+        print(current)
+        fibonacci(n - 1, current, previous + current)
+    } 
 }
 
-recursive(0)
+fibonacci(10, 0, 1)
 
 fn addUp(n) {
-    n * (n + 1) / 2 // No need for return
+    n * (n + 1) / 2 // No need to use 'return'
 }
 
 let result = addUp(50)
