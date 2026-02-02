@@ -366,6 +366,9 @@ impl Parser {
         loop {
             if self.match_token(Token::LParen) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(Token::Dot) {
+                let name = self.consume_identifier("Expect property name after '.'.")?;
+                expr = Expr::Get { object: Box::new(expr), name };
             } else {
                 break;
             }

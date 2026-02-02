@@ -31,6 +31,7 @@ pub enum Token {
     While,
     Kind,
     Comma,
+    Dot,
 
     // Operators & Symbols
     Assign,
@@ -229,7 +230,7 @@ impl Lexer {
             '.' => {
                 if self.match_char('.') { Ok(Some(Token::RangeSep)) } 
 
-                else { Ok(Some(Token::UnknownChar('.'))) }
+                else { Ok(Some(Token::Dot)) }
             }
 
             '>' => {

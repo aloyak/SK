@@ -38,6 +38,11 @@ pub enum Expr {
         callee: Box<Expr>,
         paren: TokenSpan, 
         arguments: Vec<Expr>,
+    },
+
+    Get {
+        object: Box<Expr>,
+        name: TokenSpan,
     }
 }
 

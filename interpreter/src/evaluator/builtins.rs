@@ -98,6 +98,7 @@ pub fn kind(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
         Some(Value::Symbolic { .. }) => "symbolic",
         Some(Value::NativeFn(_)) => "native function",
         Some(Value::Function(_)) => "function",
+        Some(Value::Module(_)) => "module",
         Some(Value::None) | None => "none",
     };
     Ok(Value::String(t.to_string()))

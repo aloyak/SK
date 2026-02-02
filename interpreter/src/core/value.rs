@@ -37,6 +37,7 @@ pub enum Value {
     },
     NativeFn(NativeFn),
     Function(Function),
+    Module(Rc<RefCell<Environment>>),
     None,
 }
 
@@ -307,6 +308,7 @@ impl fmt::Display for Value {
             Value::Unknown => write!(f, "unknown"),
             Value::NativeFn(_) => write!(f, "<native fn>"),
             Value::Function(_) => write!(f, "<function>"),
+            Value::Module(_) => write!(f, "<module>"),
             Value::None => write!(f, "none"),
         }
     }

@@ -67,16 +67,21 @@ impl Evaluator {
     fn eval_stmt(&mut self, stmt: Stmt) -> Result<Value, Error> {
         match stmt {
             Stmt::Import { path } => {
-                match &path.token.clone() {
+                match &path.token {
                     // Case 1: import identifier
                     Token::Identifier(lib_name) => {
                         let registry = crate::libs::get_library_registry();
                         if let Some(register_fn) = registry.get(lib_name) {
-                            let mut env = self.env.borrow_mut();
-                            register_fn(&mut env);
+                            let mut lib_env = Environment::new(); 
+                            register_fn(&mut lib_env);
+
+                            self.env.borrow_mut().define(
+                                lib_name.clone(), 
+                                Value::Module(Rc::new(RefCell::new(lib_env)))
+                            );
                         } else {
                             return Err(Error {
-                                token: path,
+                                token: path.clone(),
                                 message: format!("Unknown native library '{}'", lib_name),
                             });
                         }
@@ -84,23 +89,40 @@ impl Evaluator {
 
                     // Case 2: import "utils.sk"
                     Token::String(file_path) => {
-                        let path_buf = std::path::Path::new(file_path);
-                        
-                        let source = std::fs::read_to_string(path_buf)
-                            .or_else(|_| std::fs::read_to_string(format!("examples/{}", file_path)))
-                            .map_err(|e| Error {
-                                token: path.clone(),
-                                message: format!("Could not find file '{}': {}", file_path, e),
-                            })?;
+                        let mut final_path = std::path::PathBuf::from(file_path);
 
-                        let tokens = crate::parser::lexer::Lexer::new(source).tokenize()
-                            .map_err(|msg| Error { token: path.clone(), message: msg })?;
-
-                        let statements = crate::parser::parser::Parser::new(tokens).parse()?;
-
-                        for stmt in statements {
-                            self.eval_stmt(stmt)?;
+                        if !final_path.exists() {
+                            let examples_path = std::path::Path::new("examples").join(file_path);
+                            if examples_path.exists() {
+                                final_path = examples_path;
+                            }
                         }
+
+                        let source = std::fs::read_to_string(&final_path).map_err(|e| Error {
+                            token: path.clone(),
+                            message: format!("Could not find file '{}': {}", file_path, e),
+                        })?;
+
+                        let mut lexer = crate::parser::lexer::Lexer::new(source);
+                        let tokens = lexer.tokenize().map_err(|msg| Error { 
+                            token: path.clone(), 
+                            message: msg 
+                        })?;
+                        
+                        let mut parser = crate::parser::parser::Parser::new(tokens);
+                        let statements = parser.parse()?;
+
+                        let module_env = Rc::new(RefCell::new(Environment::new()));
+                        let mut module_evaluator = Evaluator::new(module_env.clone());
+                        module_evaluator.evaluate(statements)?;
+
+                        let module_name = final_path
+                            .file_stem()
+                            .and_then(|s| s.to_str())
+                            .unwrap_or("module")
+                            .to_string();
+
+                        self.env.borrow_mut().define(module_name, Value::Module(module_env));
                     }
 
                     _ => {
@@ -438,6 +460,26 @@ impl Evaluator {
                         token: paren,
                         message: format!("Value '{}' is not callable", callee_val),
                     }),
+                }
+            }
+
+            Expr::Get { object, name } => {
+                let obj_value = self.eval_expr(*object)?;
+                if let Value::Module(mod_env) = obj_value {
+                    let member_name = match &name.token {
+                        Token::Identifier(s) => s,
+                        _ => unreachable!(),
+                    };
+                    
+                    mod_env.borrow().get(member_name).map_err(|msg| Error {
+                        token: name.clone(), 
+                        message: msg,
+                    })
+                } else {
+                    Err(Error {
+                        token: name.clone(),
+                        message: "Only modules have properties.".to_string(),
+                    })
                 }
             }
         }
