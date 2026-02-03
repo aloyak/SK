@@ -2,7 +2,7 @@
   "name": "sk-lang",
   "displayName": "SK-Lang",
   "description": "The SK Programming Language VSCode Extension!",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/AlmartDev/SK"
