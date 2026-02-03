@@ -8,5 +8,5 @@ The language is designed for safer, more honest, and analyzable computation in c
 
 ### The Interpreter
 
-As already said, SK is an interpreted language. In order to make SK fast and safe to use, the interpreter was made entirely in rust.
+As already mentioned, SK is an interpreted language. In order to make SK fast and safe to use, the interpreter was made entirely in rust.
 Consider contributing to the interpreter!

@@ -18,4 +18,4 @@ myfunc(1, 2, 3)
 
 > Recursing is also supported but with limitations!
 
-* All functions are public to any other file when imported, at least for now
+* All functions are public by default, at least for now, the 'pub' keyword will solve this, please see Imports/imports
