@@ -94,7 +94,7 @@ fn main() {
     }
 
     if args.contains(&"--version".to_string()) {
-        println!("{} v.{}", NAME, VERSION);
+        println!("{} v{}", NAME, VERSION);
         process::exit(0);
     }
 

@@ -1,6 +1,8 @@
 import math
-import "simplelib.sk" // Please see "./simplelib.sk" for the rest of the example
 
-simplelib.fibonacci(10)
+// Please see "./simplelib.sk" for the rest of the example
+import "simplelib.sk" as mylib
+
+mylib.fibonacci(10)
 
 print("Pi: " + str(math.PI)) // PI from the math lib inside the simplelib library

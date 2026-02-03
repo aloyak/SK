@@ -50,6 +50,7 @@ pub enum Expr {
 pub enum Stmt {
     Import {
         path: TokenSpan,
+        alias: Option<TokenSpan>,
     },
 
     Let {

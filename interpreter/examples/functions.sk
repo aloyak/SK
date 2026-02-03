@@ -7,7 +7,7 @@ fn fibonacci(n, previous = 0, current = 1) {
 
 fibonacci(10)
 
-fn addUp(n) {
+fn addUp(n = num(input("n: "))) {
     n * (n + 1) / 2 // No need to use 'return'
 }
 

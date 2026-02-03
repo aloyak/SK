@@ -74,7 +74,14 @@ impl Parser {
         match peeked {
             Token::Identifier(_) | Token::String(_) => {
                 let path = self.advance().clone();
-                Ok(Stmt::Import { path })
+                
+                let alias = if self.match_token(Token::As) {
+                    Some(self.consume_identifier("Expect alias name after 'as'.")?)
+                } else {
+                    None
+                };
+
+                Ok(Stmt::Import { path, alias })
             }
             _ => Err(Error {
                 token: self.peek().clone(),

@@ -66,7 +66,7 @@ impl Evaluator {
 
     fn eval_stmt(&mut self, stmt: Stmt) -> Result<Value, Error> {
         match stmt {
-            Stmt::Import { path } => {
+            Stmt::Import { path, alias } => {
                 match &path.token {
                     // Case 1: import identifier
                     Token::Identifier(lib_name) => {
@@ -75,8 +75,14 @@ impl Evaluator {
                             let mut lib_env = Environment::new(); 
                             register_fn(&mut lib_env);
 
+                            let name = if let Some(a) = &alias {
+                                a.token_to_string()
+                            } else {
+                                lib_name.clone()
+                            };
+
                             self.env.borrow_mut().define(
-                                lib_name.clone(), 
+                                name, 
                                 Value::Module(Rc::new(RefCell::new(lib_env)))
                             );
                         } else {
@@ -116,11 +122,15 @@ impl Evaluator {
                         let mut module_evaluator = Evaluator::new(module_env.clone());
                         module_evaluator.evaluate(statements)?;
 
-                        let module_name = final_path
-                            .file_stem()
-                            .and_then(|s| s.to_str())
-                            .unwrap_or("module")
-                            .to_string();
+                        let module_name = if let Some(a) = &alias {
+                            a.token_to_string()
+                        } else {
+                            final_path
+                                .file_stem()
+                                .and_then(|s| s.to_str())
+                                .unwrap_or("module")
+                                .to_string()
+                        };
 
                         self.env.borrow_mut().define(module_name, Value::Module(module_env));
                     }
