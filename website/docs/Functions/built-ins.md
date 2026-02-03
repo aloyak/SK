@@ -6,6 +6,11 @@ The SK includes many built-in functions,
 
 ## Primitive Functions:
 ```rs
+print(x) // print a new line
+print(1, 2, 3) // returns "1 2 3"
+
+let result = input("Optional Message: ")
+
 // variable built-ins, see more in Variables/Primitives
 num(x) // Converts, when possible, to a numeric variable
 str(x) // Converts to a string

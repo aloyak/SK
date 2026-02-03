@@ -18,4 +18,14 @@ myfunc(1, 2, 3)
 
 > Recursing is also supported but with limitations!
 
-* All functions are public by default, at least for now, the 'pub' keyword will solve this, please see Imports/imports
+### Public functions
+
+In order to allow other files to use your fuctions you need to use the 'pub' keyword, which makes it public
+
+```rs
+pub fn yap() {
+    print("Hello!")
+}
+
+// This is a public function that can be called from other files
+```
