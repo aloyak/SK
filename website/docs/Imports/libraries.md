@@ -11,6 +11,7 @@ Currently SK includes these built-in libraries
 
 ### TODO:
 
+* ```os```
 * ```fs```
 * ```rand```
 * ```server*```

@@ -81,7 +81,7 @@ function App() {
     monaco.languages.setMonarchTokensProvider('sk', {
       tokenizer: {
         root: [
-          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub)\b/, 'keyword'],
+          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|break|continue)\b/, 'keyword'],
           [/\b(certain|possible|impossible|known)\b/, 'builtins'],
           [/\b(intersect|union|mid|width)\b/, 'builtins'],
           [/panic!/, 'builtins'],
