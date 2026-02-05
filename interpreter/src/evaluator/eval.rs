@@ -565,6 +565,7 @@ impl Evaluator {
         }
     }
 
+    // Now it should properly handle symbolic values extracting the inner expression
     fn propagate_symbolic(
         &self,
         left: Value,
@@ -577,21 +578,33 @@ impl Evaluator {
             _ => false,
         };
 
-        let dummy_span = |t: Token| TokenSpan {
-            token: t,
-            line: 0,
-            column: 0,
+        let left_expr = match left {
+            Value::Symbolic { expression, .. } => *expression,
+            _ => Expr::Literal {
+                value: TokenSpan {
+                    token: self.value_to_token(left),
+                    line: 0,
+                    column: 0,
+                },
+            },
+        };
+
+        let right_expr = match right {
+            Value::Symbolic { expression, .. } => *expression,
+            _ => Expr::Literal {
+                value: TokenSpan {
+                    token: self.value_to_token(right),
+                    line: 0,
+                    column: 0,
+                },
+            },
         };
 
         Ok(Value::Symbolic {
             expression: Box::new(Expr::Binary {
-                left: Box::new(Expr::Literal {
-                    value: dummy_span(self.value_to_token(left)),
-                }),
+                left: Box::new(left_expr),
                 operator: op,
-                right: Box::new(Expr::Literal {
-                    value: dummy_span(self.value_to_token(right)),
-                }),
+                right: Box::new(right_expr),
             }),
             is_quiet,
         })

@@ -13,7 +13,6 @@ use crate::parser::parser::Parser;
 use crate::evaluator::eval::Evaluator;
 use crate::evaluator::env::Environment;
 use crate::core::value::Value;
-use crate::parser::ast::Stmt;
 use crate::core::error::Error;
 
 pub struct SKInterpreter {
@@ -30,7 +29,7 @@ impl SKInterpreter {
     pub fn execute(&mut self, source: &Path) -> Result<Value, Error> {
         let raw = fs::read_to_string(source).map_err(|e| Error {
             token: TokenSpan {
-                token: Token::Unknown,
+                token: Token::None,
                 line: 0,
                 column: 0,
             },
@@ -44,7 +43,7 @@ impl SKInterpreter {
         let mut lexer = Lexer::new(source);
         let tokens = lexer.tokenize().map_err(|msg| Error {
             token: TokenSpan {
-                token: Token::Unknown,
+                token: Token::None,
                 line: 0,
                 column: 0,
             },
@@ -54,7 +53,7 @@ impl SKInterpreter {
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().map_err(|msg| Error {
             token: TokenSpan {
-                token: Token::Unknown,
+                token: Token::None,
                 line: 0,
                 column: 0,
             },
@@ -63,14 +62,5 @@ impl SKInterpreter {
 
         let mut evaluator = Evaluator::new(self.env.clone());
         evaluator.evaluate(ast)
-    }
-
-    fn _debug_ast(&self, program: &Vec<Stmt>) {
-        println!("--- Abstract Syntax Tree ---");
-        for (i, stmt) in program.iter().enumerate() {
-            println!("Statement {}:", i);
-            println!("{:#?}", stmt);
-            println!("-----------------------");
-        }
     }
 }
