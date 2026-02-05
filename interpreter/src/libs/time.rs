@@ -15,7 +15,7 @@ static TIMER_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU6
 
 pub fn register(env: &mut Environment) {
     env.define("now".into(), Value::NativeFn(now));
-    env.define("formatTime".into(), Value::NativeFn(format_time));
+    env.define("format".into(), Value::NativeFn(format));
     env.define("sleep".into(), Value::NativeFn(sleep));
 
     env.define("startTimer".into(), Value::NativeFn(start_timer));
@@ -37,7 +37,7 @@ pub fn now(_args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Valu
     }
 }
 
-pub fn format_time(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn format(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     use chrono::{DateTime, Utc};
     // YYYY-MM-DD: HH:MM:SS
     match args.first() {
@@ -45,7 +45,7 @@ pub fn format_time(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Resu
             let dt = DateTime::<Utc>::from(UNIX_EPOCH + std::time::Duration::from_secs_f64(*n));
             Ok(Value::String(dt.format("%Y-%m-%d: %H:%M:%S").to_string()))
         }
-        _ => Err(err(span, "formatTime() expects 1 number".to_string())),
+        _ => Err(err(span, "format() expects 1 number".to_string())),
     }
 }
 

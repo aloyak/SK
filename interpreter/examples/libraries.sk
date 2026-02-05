@@ -12,7 +12,7 @@ mylib.fibonacci(10)
 time.sleep(1)
 
 print("Pi: " + str(math.PI)) // PI from the math lib inside the simplelib library
-print("Now: " + str(time.formatTime(time.now())))
+print("Now: " + str(time.format(time.now())))
 
-let elapsed = time.stopTimer(timer)
+let elapsed = time.stopTimer(0)
 print("Test file took " + str(elapsed) + " seconds to run!")
