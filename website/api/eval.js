@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import https from 'https';
 
-const BINARY_URL = "https://github.com/AlmartDev/SK/releases/download/0.7.6/SK";
+const BINARY_URL = "https://github.com/AlmartDev/SK/releases/latest/download/SK";
 const REMOTE_BINARY_PATH = "/tmp/SK";
 const LOCAL_BINARY_PATH = path.join(process.cwd(), 'SK');
 

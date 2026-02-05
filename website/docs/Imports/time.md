@@ -10,7 +10,7 @@ Basic time library that includes some simple debugging functions too!
 
 * ```time.now()```, returns the current time in seconds from UNIX epoch
 * ```time.format()```, converts any timestamp from UNIX to ```YYYY-MM-DD: HH:MM:SS```
-* ```time.sleep```, freezes the thread for the given amount of seconds, if an interval is given, it will use the interval's midpoint
+* ```time.sleep()```, freezes the thread for the given amount of seconds, if an interval is given, it will use the interval's midpoint
 
 ### Timer
 
