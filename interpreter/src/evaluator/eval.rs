@@ -179,8 +179,7 @@ impl Evaluator {
                 Ok(Value::None)
             }
             Stmt::Panic => {
-                eprintln!("Program panicked!");
-                std::process::exit(1);
+                Err(Error { token: TokenSpan { token: Token::Panic, line: 0, column: 0 }, message: "Program panicked!".to_string() })
             }
             Stmt::Expression { expression } => self.eval_expr(expression),
             Stmt::If { condition, policy, then_branch, elif_branch, else_branch } => {
@@ -429,7 +428,7 @@ impl Evaluator {
 
                 match callee_val {
                     Value::NativeFn(func) => {
-                        match func(eval_args, self) {
+                        match func(eval_args, paren.clone(), self) {
                             Ok(v) => Ok(v),
                             Err(mut e) => {
                                 if matches!(e.token.token, Token::Unknown) {
@@ -565,6 +564,50 @@ impl Evaluator {
         }
     }
 
+    fn simplify_symbolic(expr: Expr) -> Expr {
+        match expr {
+            Expr::Binary { left, operator, right } => {
+                let left = Self::simplify_symbolic(*left);
+                let right = Self::simplify_symbolic(*right);
+
+                match (&left, &operator.token, &right) {
+                    (Expr::Literal { value: l_val }, Token::Plus, Expr::Literal { value: r_val }) => {
+                        if let (Token::Number(a), Token::Number(b)) = (&l_val.token, &r_val.token) {
+                            return Expr::Literal {
+                                value: TokenSpan {
+                                    token: Token::Number(a + b),
+                                    ..operator.clone()
+                                }
+                            };
+                        }
+                    }
+                    // x + 0 = x ; x - 0 = x
+                    (Expr::Literal { value: val }, Token::Plus, _) | (_, Token::Plus, Expr::Literal { value: val }) => {
+                        if let Token::Number(0.0) = val.token {
+                            return if let Token::Number(0.0) = val.token { 
+                                if matches!(left, Expr::Literal { .. }) { right } else { left } 
+                            } else { 
+                                Expr::Binary { left: Box::new(left), operator, right: Box::new(right) }
+                            };
+                        }
+                    }
+                    // 0 * x = 0 ; 1 * x = x
+                    (Expr::Literal { value: val }, Token::Star, _) | (_, Token::Star, Expr::Literal { value: val }) => {
+                        if let Token::Number(0.0) = val.token {
+                            return Expr::Literal { value: val.clone() };
+                        }
+                        if let Token::Number(1.0) = val.token {
+                            return if matches!(left, Expr::Literal { .. }) { right } else { left };
+                        }
+                    }
+                    _ => {}
+                }
+                Expr::Binary { left: Box::new(left), operator, right: Box::new(right) }
+            }
+            _ => expr,
+        }
+    }
+
     // Now it should properly handle symbolic values extracting the inner expression
     fn propagate_symbolic(
         &self,
@@ -600,12 +643,14 @@ impl Evaluator {
             },
         };
 
+        let expression = Self::simplify_symbolic(Expr::Binary {
+            left: Box::new(left_expr),
+            operator: op,
+            right: Box::new(right_expr),
+        });
+
         Ok(Value::Symbolic {
-            expression: Box::new(Expr::Binary {
-                left: Box::new(left_expr),
-                operator: op,
-                right: Box::new(right_expr),
-            }),
+            expression: Box::new(expression),
             is_quiet,
         })
     }

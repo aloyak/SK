@@ -2,7 +2,7 @@ use crate::core::value::Value;
 use crate::evaluator::env::Environment;
 use crate::evaluator::eval::Evaluator;
 use crate::core::error::Error;
-use crate::parser::lexer::{Token, TokenSpan};
+use crate::parser::lexer::TokenSpan;
 
 // The SK Math library!
 
@@ -31,85 +31,85 @@ pub fn register(env: &mut Environment) {
     env.define("E".into(), Value::Number(std::f64::consts::E));
 }
 
-fn err(msg: String) -> Error {
+fn err(token: TokenSpan, msg: String) -> Error {
     Error {
-        token: TokenSpan { token: Token::Unknown, line: 0, column: 0 },
+        token,
         message: msg
     }
 }
 
-pub fn sqrt(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn sqrt(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.sqrt())),
         Some(Value::Interval(min, max)) => {
             if *min < 0.0 {
-                return Err(err("Cannot take sqrt of negative interval".to_string()));
+                return Err(err(span, "Cannot take sqrt of negative interval".to_string()));
             }
             Ok(Value::Interval(min.sqrt(), max.sqrt()))
         }
-        _ => Err(err("sqrt() expects 1 number or interval".to_string())),
+        _ => Err(err(span, "sqrt() expects 1 number or interval".to_string())),
     }
 }
 
-pub fn sin(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn sin(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.sin())),
-        _ => Err(err("sin() expects 1 number".to_string())),
+        _ => Err(err(span, "sin() expects 1 number".to_string())),
     }
 }
 
-pub fn cos(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn cos(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.cos())),
-        _ => Err(err("cos() expects 1 number".to_string())),
+        _ => Err(err(span, "cos() expects 1 number".to_string())),
     }
 }
 
-pub fn tan(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn tan(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.tan())),
-        _ => Err(err("tan() expects 1 number".to_string())),
+        _ => Err(err(span, "tan() expects 1 number".to_string())),
     }
 }
 
-pub fn log10(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn log10(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.log10())),
-        _ => Err(err("log10() expects 1 number".to_string())),
+        _ => Err(err(span, "log10() expects 1 number".to_string())),
     }
 }
 
-pub fn log2(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn log2(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.log2())),
-        _ => Err(err("log2() expects 1 number".to_string())),
+        _ => Err(err(span, "log2() expects 1 number".to_string())),
     }
 }
 
-pub fn ln(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn ln(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.ln())),
-        _ => Err(err("ln() expects 1 number".to_string())),
+        _ => Err(err(span, "ln() expects 1 number".to_string())),
     }
 }
 
-pub fn exp(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn exp(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.exp())),
-        _ => Err(err("exp() expects 1 number".to_string())),
+        _ => Err(err(span, "exp() expects 1 number".to_string())),
     }
 }
 
-pub fn abs(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn abs(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.abs())),
-        _ => Err(err("abs() expects 1 number".to_string())),
+        _ => Err(err(span, "abs() expects 1 number".to_string())),
     }
 }
 
-pub fn min(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn min(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     if args.len() < 2 {
-        return Err(err("min() expects at least 2 numbers".to_string()));
+        return Err(err(span, "min() expects at least 2 numbers".to_string()));
     }
 
     let mut min_val = std::f64::INFINITY;
@@ -120,15 +120,15 @@ pub fn min(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
                     min_val = n;
                 }
             }
-            _ => return Err(err("min() expects only numbers".to_string())),
+            _ => return Err(err(span, "min() expects only numbers".to_string())),
         }
     }
     Ok(Value::Number(min_val))
 }
 
-pub fn max(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn max(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     if args.len() < 2 {
-        return Err(err("max() expects at least 2 numbers".to_string()));
+        return Err(err(span, "max() expects at least 2 numbers".to_string()));
     }
 
     let mut max_val = std::f64::NEG_INFINITY;
@@ -139,33 +139,33 @@ pub fn max(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
                     max_val = n;
                 }
             }
-            _ => return Err(err("max() expects only numbers".to_string())),
+            _ => return Err(err(span, "max() expects only numbers".to_string())),
         }
     }
     Ok(Value::Number(max_val))
 }
 
-pub fn deg(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn deg(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.to_degrees())),
-        _ => Err(err("deg() expects 1 number".to_string())),
+        _ => Err(err(span, "deg() expects 1 number".to_string())),
     }
 }
 
-pub fn rad(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn rad(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Number(n)) => Ok(Value::Number(n.to_radians())),
-        _ => Err(err("rad() expects 1 number".to_string())),
+        _ => Err(err(span, "rad() expects 1 number".to_string())),
     }
 }
 
-pub fn atan2(args: Vec<Value>, _: &mut Evaluator) -> Result<Value, Error> {
+pub fn atan2(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
     if args.len() != 2 {
-        return Err(err("atan2() expects exactly 2 numbers".to_string()));
+        return Err(err(span, "atan2() expects exactly 2 numbers".to_string()));
     }
 
     match (&args[0], &args[1]) {
         (Value::Number(y), Value::Number(x)) => Ok(Value::Number(y.atan2(*x))),
-        _ => Err(err("atan2() expects only numbers".to_string())),
+        _ => Err(err(span, "atan2() expects only numbers".to_string())),
     }
 }

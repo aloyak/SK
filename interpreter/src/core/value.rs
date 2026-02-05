@@ -15,7 +15,7 @@ pub enum SKBool {
     Partial
 }
 
-pub type NativeFn = fn(Vec<Value>, &mut crate::evaluator::eval::Evaluator) -> Result<Value, Error>;
+pub type NativeFn = fn(Vec<Value>, TokenSpan, &mut crate::evaluator::eval::Evaluator) -> Result<Value, Error>;
 
 #[derive(Debug, Clone)]
 pub struct Function {
