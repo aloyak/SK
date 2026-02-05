@@ -1,8 +1,18 @@
 import math
+import time
 
 // Please see "./simplelib.sk" for the rest of the example
 import "simplelib.sk" as mylib
 
+// debugging timer
+let timer = time.startTimer() // returns timer's ID, starting from 0
+
 mylib.fibonacci(10)
 
+time.sleep(1)
+
 print("Pi: " + str(math.PI)) // PI from the math lib inside the simplelib library
+print("Now: " + str(time.formatTime(time.now())))
+
+let elapsed = time.stopTimer(timer)
+print("Test file took " + str(elapsed) + " seconds to run!")
