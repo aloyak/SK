@@ -8,6 +8,15 @@
     ],
     "description": "Create a new function"
   },
+  "Public Function Declaration": {
+    "prefix": "pub",
+    "body": [
+      "pub fn ${1:name}(${2:args}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a new public function"
+  },
   "If Statement": {
     "prefix": "if",
     "body": [
@@ -16,5 +25,14 @@
       "}"
     ],
     "description": "Control flow if"
+  },
+  "Loop": {
+    "prefix": "loop",
+    "body": [
+      "loop {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create an infinite loop"
   }
 }
