@@ -29,6 +29,12 @@ pub fn register(env: &mut Environment) {
 
     env.define("PI".into(), Value::Number(std::f64::consts::PI));
     env.define("E".into(), Value::Number(std::f64::consts::E));
+
+    // Interval Operators moved here
+    env.define("width".into(), Value::NativeFn(width));
+    env.define("mid".into(), Value::NativeFn(mid));
+    env.define("intersection".into(), Value::NativeFn(intersection));
+    env.define("union".into(), Value::NativeFn(union));
 }
 
 fn err(token: TokenSpan, msg: String) -> Error {
@@ -167,5 +173,54 @@ pub fn atan2(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Val
     match (&args[0], &args[1]) {
         (Value::Number(y), Value::Number(x)) => Ok(Value::Number(y.atan2(*x))),
         _ => Err(err(span, "atan2() expects only numbers".to_string())),
+    }
+}
+
+// Interval Ops
+pub fn width(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
+    match args.first() {
+        Some(Value::Interval(min, max)) => Ok(Value::Number(max - min)),
+        _ => Err(err(span, "width() expects 1 interval".to_string())),
+    }
+}
+
+pub fn mid(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
+    match args.first() {
+        Some(Value::Interval(min, max)) => Ok(Value::Number((min + max) / 2.0)),
+        _ => Err(err(span, "mid() expects 1 interval".to_string())),
+    }
+}
+
+pub fn intersection(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
+    if args.len() != 2 {
+        return Err(err(span, "intersection() expects exactly 2 intervals".to_string()));
+    }
+
+    match (&args[0], &args[1]) {
+        (Value::Interval(min1, max1), Value::Interval(min2, max2)) => {
+            let new_min = min1.max(*min2);
+            let new_max = max1.min(*max2);
+            if new_min > new_max {
+                Ok(Value::Interval(0.0, 0.0)) // No intersection
+            } else {
+                Ok(Value::Interval(new_min, new_max))
+            }
+        }
+        _ => Err(err(span, "intersection() expects only intervals".to_string())),
+    }
+}
+
+pub fn union(args: Vec<Value>, span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
+    if args.len() != 2 {
+        return Err(err(span, "union() expects exactly 2 intervals".to_string()));
+    }
+
+    match (&args[0], &args[1]) {
+        (Value::Interval(min1, max1), Value::Interval(min2, max2)) => {
+            let new_min = min1.min(*min2);
+            let new_max = max1.max(*max2);
+            Ok(Value::Interval(new_min, new_max))
+        }
+        _ => Err(err(span, "union() expects only intervals".to_string())),
     }
 }

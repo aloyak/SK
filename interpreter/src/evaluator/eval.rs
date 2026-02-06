@@ -414,10 +414,6 @@ impl Evaluator {
                     Token::Impossible => "impossible",
                     Token::Str => "str",
                     Token::Num => "num",
-                    Token::Width => "width",
-                    Token::Mid => "mid",
-                    Token::Intersect => "intersect",
-                    Token::Union => "union",
                     _ => {
                         return Err(Error {
                             token: name,

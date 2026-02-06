@@ -392,10 +392,6 @@ impl Parser {
             || self.match_token(Token::Known)
             || self.match_token(Token::Possible)
             || self.match_token(Token::Impossible)
-            || self.match_token(Token::Width)
-            || self.match_token(Token::Mid)
-            || self.match_token(Token::Intersect)
-            || self.match_token(Token::Union)
             || self.match_token(Token::String("".to_string())) {
 
             return Ok(Expr::Variable { name: self.previous().clone() });

@@ -73,12 +73,6 @@ pub enum Token {
     Certain,
     Known,
 
-    // Interval Operators
-    Width, // max - min
-    Mid,   // midpoint
-    Intersect, // returns overlapping of two intervals!
-    Union,     // returns the smallest interval that contains both
-
     True,
     False,
     Partial,
@@ -318,10 +312,6 @@ impl Lexer {
             "impossible" => Token::Impossible,
             "certain" => Token::Certain,
             "known" => Token::Known,
-            "width" => Token::Width,
-            "mid" => Token::Mid,
-            "intersection" => Token::Intersect,
-            "union" => Token::Union,
             _ => Token::Identifier(text),
         }
     }
