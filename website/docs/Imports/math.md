@@ -25,6 +25,8 @@ Includes many simple mathematical functions such as:
 
 * ```math.atan2()```
 
+* ```math.truncate(original, decimals)```, returns the first value truncated to the number of decimals given on the second value
+
 * ```math.deg()```, from rads to degrees
 * ```math.rad()```, from degrees to radians
 

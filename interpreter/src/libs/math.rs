@@ -30,6 +30,8 @@ pub fn register(env: &mut Environment) {
     env.define("PI".into(), Value::Number(std::f64::consts::PI));
     env.define("E".into(), Value::Number(std::f64::consts::E));
 
+    env.define("truncate".into(), Value::NativeFn(truncate));
+
     // Interval Operators moved here
     env.define("width".into(), Value::NativeFn(width));
     env.define("mid".into(), Value::NativeFn(mid));
@@ -166,6 +168,20 @@ pub fn atan2(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<
     match (&args[0], &args[1]) {
         (Value::Number(y), Value::Number(x)) => Ok(Value::Number(y.atan2(*x))),
         _ => Err(eval.error(span, "atan2() expects only numbers")),
+    }
+}
+
+pub fn truncate(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
+    if args.len() < 2 {
+        return Err(eval.error(span, "truncate() expects two numbers"));
+    }
+
+    match (&args[0], &args[1]) {
+        (Value::Number(n), Value::Number(decimals)) => {
+            let factor = 10f64.powf(*decimals);
+            Ok(Value::Number((n * factor).trunc() / factor))
+        }
+        _ => Err(eval.error(span, "truncate() expects only numbers")),
     }
 }
 
