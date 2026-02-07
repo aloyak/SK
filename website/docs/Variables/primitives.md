@@ -38,3 +38,18 @@ Strings support concatenation using the '+' operator
 let name = "John SK"
 print("Hello, " + name + "!")
 ```
+
+### Increment and Decrement Operators
+
+Just like in C++ you can use the Increment and Decrement Operators
+
+```rs
+let n = 23
+
+n++ // 24
+n-- // 23
+
+// Same as
+n = n + 1
+n = n - 1
+```
