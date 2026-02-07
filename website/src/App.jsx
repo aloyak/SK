@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import IDE from './pages/IDE';
 import About from './pages/About';
@@ -16,7 +17,10 @@ const THEMES = {
   }
 };
 
-function App() {
+function AppRoutes({ theme }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [page, setPage] = useState('about');
   const [code, setCode] = useState(
     '// The SK Programming Language\n' + 
@@ -45,7 +49,7 @@ function App() {
   
   const isResizing = useRef(false);
   const fileInputRef = useRef(null);
-  const t = THEMES.sk;
+  const t = theme;
 
   useEffect(() => {
     (async () => {
@@ -58,6 +62,19 @@ function App() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    // sync page state from URL
+    const path = location.pathname.replace('/', '') || 'about';
+    setPage(path);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    // sync URL from page state
+    if (location.pathname !== `/${page}`) {
+      navigate(`/${page}`, { replace: true });
+    }
+  }, [page, navigate, location.pathname]);
 
   useEffect(() => {
     if (page === 'ide') {
@@ -169,19 +186,27 @@ function App() {
     }
   };
 
-  const PAGES = {
-    ide: <IDE {...{code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme: t}} />,
-    about: <About theme={t} setPage={setPage} />,
-    docs: <Docs theme={t} setPage={setPage} />,
-    basics: <Basics theme={t} />
-  };
-
   return (
     <div className={`h-screen flex flex-col ${t.bg} font-sans p-10 select-none`}>
       <input type="file" ref={fileInputRef} onChange={handleUpload} className="hidden" accept=".sk" />
       <Header currentPage={page} onRun={handleRun} onDownload={handleDownload} onUpload={handleUpload} setPage={setPage} theme={t} />
-      {PAGES[page]}
+      <Routes>
+        <Route path="/about" element={<About theme={t} setPage={setPage} />} />
+        <Route path="/ide" element={<IDE {...{code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme: t}} />} />
+        <Route path="/docs" element={<Docs theme={t} setPage={setPage} />} />
+        <Route path="/basics" element={<Basics theme={t} />} />
+        <Route path="/" element={<Navigate to="/about" replace />} />
+        <Route path="*" element={<Navigate to="/about" replace />} />
+      </Routes>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes theme={THEMES.sk} />
+    </BrowserRouter>
   );
 }
 
