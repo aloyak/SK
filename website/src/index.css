@@ -9,7 +9,7 @@ html, body, #root {
 
 /* Markdown Content Styling */
 .markdown-content h1 {
-  color: #e27a7a;
+  color: #ffffff;
   font-size: 2rem;
   font-weight: 800;
   margin: 1.5rem 0 1rem 0;
@@ -60,16 +60,16 @@ html, body, #root {
 }
 
 .markdown-content ul li::marker {
-  color: #e27a7a;
+  color: #ffffff;
 }
 
 .markdown-content ol li::marker {
-  color: #e27a7a;
+  color: #ffffff;
 }
 
 .markdown-content code {
   background-color: #1e1e2e;
-  color: #cba6f7;
+  color: #ffffff;
   padding: 0.15rem 0.4rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
@@ -92,7 +92,7 @@ html, body, #root {
 }
 
 .markdown-content blockquote {
-  border-left: 4px solid #e27a7a;
+  border-left: 4px solid #817e7e81;
   padding-left: 1rem;
   margin: 1rem 0;
   color: #cbd5e1;

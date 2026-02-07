@@ -16,9 +16,9 @@ num(x) // Converts, when possible, to a numeric variable
 str(x) // Converts to a string
 ```
 
-## The 'panic!' keyword
+## The ```panic!``` keyword
 
-```panic``` does also work but it is not recommended
+> Note that ```panic``` does also work but it is not recommended
 
 ```rs
 panic! // Ends the program execution
@@ -35,6 +35,8 @@ impossible(x) // is the condition impossible?
 
 ## Interval Operators
 
+> Note that these functions were moved to the ```math``` library
+
 ```rs
 // Interval Operators, please see Functions/Special Operators
 intersect(A, B)
@@ -43,9 +45,10 @@ mid(A)
 width(A)
 ```
 
-## 'Resolve'
+## Resolve
+
+* More in Variables/Symbolics
 
 ```rs
-// see more in Variables/Symbolics
 resolve(symbolics) // returns the resolved value of a symbolic variable
 ```
