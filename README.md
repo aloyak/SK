@@ -3,13 +3,15 @@
   <h1 style="font-size: 3rem; margin-top: 10px;">The SK Programming Language</h1>
 </div>
 
-* **[SK-Lang Website + web IDE + Documentation](https://sk-lang.vercel.app)**
+* **[SK-Lang Website](https://sk-lang.vercel.app)**
+* **[Documentation](https://sk-lang.vercel.app/docs)**
+* **[Web IDE](https://sk-lang.vercel.app/ide)**
 
 * **[Crates.io](https://crates.io/crates/sk-lang)**
 
-## Overview
+## General Information
 
-SK is a conceptual programming language designed to handle incomplete, approximate, or partially known information as first-class entities. Unlike traditional languages, SK does **not assume all variables have exact values**. Instead, it tracks uncertainty explicitly throughout calculations, decisions, and control flow.  
+SK is a high-level interpreted programming language designed to handle incomplete, approximate, or partially known information as first-class entities. Unlike traditional languages, SK does **not assume all variables have exact values**. Instead, it tracks uncertainty explicitly throughout calculations, decisions, and control flow.  
 
 The language is designed for **safer, more honest, and analyzable computation** in contexts where data may be noisy, incomplete, or evolving.
 
@@ -23,9 +25,9 @@ The final version of SK is in the works with a full scale Rust interpreter, this
 cargo install sk-lang
 ```
 
-* or download the latest binaries [here!](https://github.com/AlmartDev/SK/releases/latest) (currently Linux only)
+* or download the latest binaries [here!](https://github.com/AlmartDev/SK/releases/latest)
 
-> Please consider taking a look to the docs here: [documentation](https://sk-lang.vercel.app)
+> Please consider taking a look to the docs here: [documentation](https://sk-lang.vercel.app/docs)
 
 ## Python Prototype
 
@@ -50,7 +52,9 @@ SK supports several kinds of values:
 * **Known values** – exact, fully determined numbers or objects:
 
 ```rs
-let n = 3       // n is 3
+let number = 3
+let string = "hello!"
+let boolean = true
 ```
 
 * **Intervals** – ranges of possible numeric values:
@@ -63,6 +67,8 @@ let temperature = [18..24] // temperature can be any value between 18 and 24
 
 ```rs
 unknown x
+// or
+let x = unknown
 ```
 
 * **Symbolic values** – formulas that may depend on unknowns or intervals:
@@ -72,7 +78,7 @@ symbolic area
 area = side^2
 ```
 
-* **Quiet symbolic values** – similar to symbolic, but it keeps the formula hidden
+* **Quiet symbolic values** – similar to symbolic, but it keeps the formula always hidden
 
 ```rs
 quiet volume
@@ -117,7 +123,7 @@ print(possible(check))  // → true
 print(known(val))       // → false
 ```
 
-* Interval Operators:
+* Interval Operators (moved to the ```math``` library):
 
 ```rs
 let A = [0..10]
@@ -145,7 +151,7 @@ if x > 0.5 -> merge { // merge is an 'if policy'
 ```
 
 * In order to solve uncertain cases, ifs can have different policies:
-  * ```strict``` (Default) Doesn't run any branch
+  * ```strict``` **(Default)** Doesn't run any branch
   * ```merge```  Runs both branches
   * ```panic```  Runetime Error
 
@@ -178,6 +184,7 @@ let result = addUp(50)
 ```
 
 * Functions operate seamlessly on known, interval, unknown, and symbolic values.
+* Note that all functions are private by default, use the ```pub``` keyword to allow other files to use them
 
 ### 5. Basic Built-in functions
 
@@ -187,14 +194,64 @@ let result = addUp(50)
 * ```num()``` converts, when possible, to a number
 * ```panic!``` or simply ```panic``` (not recommended), throws a run time error and finishes program execution
 
-### 6. Constraints (Proposed)
-
-* Future SK syntax may allow constraints on unknown values:
+### 6. Loops
 
 ```rs
-unknown x > 0        // x is unknown but positive
-unknown y % 2 == 0   // y is unknown but even
+let n = 10
+loop {
+    if n <= 0 {
+        break
+    }
+    print(n)
+    n = n - 1
+}
 ```
+* The ```loop``` statement includes the ```break``` and ```continue``` keywords
+
+### 6. Imports & Libraries
+
+* SK features a multiple file import system for better organization and scalability
+
+```rs
+import "utils.sk" as utils
+import "server.sk" as server 
+```
+
+* For more control it also features the ```as``` keyword to name aliases. Also note that all functions are private to other files by default, using the ```pub``` keyword at the start of a definition makes them public
+
+* SK includes many standard libraries, written directly in rust, such as:
+
+  * ```math```
+  * ```rand```
+  * ```os```
+  * ```time```
+
+> Please consider taking a look to the docs for more information: [documentation](https://sk-lang.vercel.app/docs)
+
+### 7. Beatiful Errors
+* This is the proposed syntax, this is yet to come!
+```sh
+[Runtime Error]: Use of undefined variable 'myvar' (files/test.sk:6:8)
+     |
+  6  | print(myvar) // Error...
+     |       ^^^^^
+```
+
+### 8. Proposed Ideas
+
+* Some ideas yet to come:
+
+  * Constrains
+  ```rs
+  unknown x > 0 // x is unknown but positive
+  unknown x % 2 == 0 // x is unknown but even
+  ```
+
+  * The ```explain``` primitive function
+  ```rs
+  explain(x)
+  ```
+  * Any proposed ideas are welcome!
 
 ## VS Code Extension
 
@@ -223,5 +280,5 @@ Proud member of HackClub!
 
 ### Inspiration
 
-Took many cool ideas from this other project, so ty! @cyteon
+> Took many cool ideas from this other project, so ty! @cyteon
 [MODU Programming Language](https://github.com/cyteon/modu)
