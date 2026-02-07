@@ -82,6 +82,9 @@ pub enum Token {
     False,
     Partial,
 
+    Increment, // ++
+    Decrement, // --
+
     NewLine,
     EOF,
 }
@@ -208,7 +211,6 @@ impl Lexer {
             '{' => Ok(Some(Token::LBrace)),
             '}' => Ok(Some(Token::RBrace)),
             ',' => Ok(Some(Token::Comma)),
-            '+' => Ok(Some(Token::Plus)),
             '*' => Ok(Some(Token::Star)),
             '^' => Ok(Some(Token::Caret)),
 
@@ -243,8 +245,13 @@ impl Lexer {
                 if self.match_char('=') { Ok(Some(Token::EqualEqual)) } 
                 else { Ok(Some(Token::Assign)) }
             }
+            '+' => {
+                if self.match_char('+') { Ok(Some(Token::Increment)) }
+                else { Ok(Some(Token::Plus)) }
+            },
             '-' => {
                 if self.match_char('>') { Ok(Some(Token::Arrow)) } 
+                else if self.match_char('-') { Ok(Some(Token::Decrement)) }
                 else { Ok(Some(Token::Minus)) }
             }
             '.' => {

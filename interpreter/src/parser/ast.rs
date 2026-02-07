@@ -44,6 +44,11 @@ pub enum Expr {
     Get {
         object: Box<Expr>,
         name: TokenSpan,
+    },
+
+    Postfix {
+        name: TokenSpan,
+        operator: TokenSpan,
     }
 }
 

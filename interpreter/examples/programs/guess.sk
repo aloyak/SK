@@ -1,4 +1,5 @@
 import os
+import math
 import time
 import rand
 
@@ -9,7 +10,7 @@ let tries = 0
 
 loop {
     let try = num(input("Your Guess: "))
-    tries = tries + 1
+    tries++
 
     if try > guess {
         print("Too big")
@@ -25,4 +26,4 @@ loop {
 }
 
 let elapsed = time.stopTimer(timer)
-print("It took you " + str(elapsed) + " seconds and " + str(tries) + " tries to guess it!")
+print("It took you " + str(math.truncate(elapsed, 2)) + " seconds and " + str(tries) + " tries to guess it!")

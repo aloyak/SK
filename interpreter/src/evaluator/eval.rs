@@ -404,6 +404,18 @@ impl Evaluator {
             }
             Expr::Grouping { expression } => format!("({})", self.format_symbolic(expression)),
             Expr::Block { .. } => "{...}".to_string(),
+            Expr::Postfix { name, operator } => {
+                let n = match &name.token {
+                    Token::Identifier(s) => s.as_str(),
+                    _ => "?",
+                };
+                let op = match operator.token {
+                    Token::Increment => "++",
+                    Token::Decrement => "--",
+                    _ => "?",
+                };
+                format!("{}{}", n, op)
+            }
             _ => "...".to_string(),
         }
     }
@@ -457,6 +469,62 @@ impl Evaluator {
                     .borrow()
                     .get(name_str)
                     .map_err(|msg| self.report_error(name, msg))
+            }
+
+            Expr::Postfix { name, operator } => {
+                let name_str = match &name.token {
+                    Token::Identifier(n) => n.clone(),
+                    _ => return Err(self.report_error(name, "Expected identifier")),
+                };
+
+                let current = self
+                    .env
+                    .borrow()
+                    .get(&name_str)
+                    .map_err(|msg| self.report_error(name.clone(), msg))?;
+
+                let one = Value::Number(1.0);
+                let updated = if current == Value::Unknown {
+                    Value::Unknown
+                } else if current.is_symbolic_or_unknown() {
+                    let op_token = match operator.token {
+                        Token::Increment => Token::Plus,
+                        Token::Decrement => Token::Minus,
+                        _ => {
+                            return Err(self.report_error(
+                                operator,
+                                "Invalid postfix operator",
+                            ))
+                        }
+                    };
+                    let op_span = TokenSpan {
+                        token: op_token,
+                        line: operator.line,
+                        column: operator.column,
+                    };
+                    self.propagate_symbolic(current, op_span, one)?
+                } else {
+                    match operator.token {
+                        Token::Increment => current
+                            .add(&one)
+                            .map_err(|e| self.report_error(operator.clone(), e.message))?,
+                        Token::Decrement => current
+                            .sub(&one)
+                            .map_err(|e| self.report_error(operator.clone(), e.message))?,
+                        _ => {
+                            return Err(self.report_error(
+                                operator,
+                                "Invalid postfix operator",
+                            ))
+                        }
+                    }
+                };
+
+                if let Err(msg) = self.env.borrow_mut().assign(&name_str, updated.clone()) {
+                    return Err(self.report_error(name, msg));
+                }
+
+                Ok(updated)
             }
 
             Expr::Interval { min, max, bracket } => {

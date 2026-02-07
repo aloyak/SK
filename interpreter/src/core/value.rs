@@ -98,6 +98,18 @@ impl Value {
                 if let Token::Identifier(n) = &name.token { n.clone() } else { format!("{:?}", name.token) }
             }
             Expr::Grouping { expression } => format!("({})", Self::format_expr(expression)),
+            Expr::Postfix { name, operator } => {
+                let n = match &name.token {
+                    Token::Identifier(s) => s.as_str(),
+                    _ => "?",
+                };
+                let op = match operator.token {
+                    Token::Increment => "++",
+                    Token::Decrement => "--",
+                    _ => "?",
+                };
+                format!("{}{}", n, op)
+            }
             _ => "...".to_string(),
         }
     }

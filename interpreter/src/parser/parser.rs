@@ -350,6 +350,15 @@ impl Parser {
             } else if self.match_token(Token::Dot) {
                 let name = self.consume_identifier("Expect property name after '.'")?;
                 expr = Expr::Get { object: Box::new(expr), name };
+            } else if self.match_any(&[Token::Increment, Token::Decrement]) {
+                let operator = self.previous().clone();
+                return match expr {
+                    Expr::Variable { name } => Ok(Expr::Postfix { name, operator }),
+                    _ => Err(self.report_error(
+                        operator,
+                        "Postfix ++/-- only allowed on variables",
+                    )),
+                };
             } else {
                 break;
             }
