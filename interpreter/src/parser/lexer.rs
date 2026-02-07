@@ -1,3 +1,8 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use crate::core::error::{Error, ErrorKind, ErrorReporter};
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     UnknownChar(char),
@@ -97,10 +102,24 @@ impl TokenSpan {
             _ => format!("{:?}", self.token)
         }
     }
+
+    pub fn display_len(&self) -> usize {
+        match &self.token {
+            Token::Identifier(s) => s.len(),
+            Token::String(s) => s.len() + 2,
+            Token::Number(n) => n.to_string().len(),
+            Token::UnknownChar(_) => 1,
+            Token::True => 4,
+            Token::False => 5,
+            Token::Partial => 7,
+            Token::None => 4,
+            _ => 1,
+        }
+    }
 }
 
-pub fn tokenize(raw: String) -> Result<Vec<TokenSpan>, String> {
-    let mut lexer = Lexer::new(raw);
+pub fn tokenize(raw: String, reporter: Rc<RefCell<ErrorReporter>>) -> Result<Vec<TokenSpan>, Error> {
+    let mut lexer = Lexer::new(raw, reporter);
     lexer.tokenize()
 }
 
@@ -109,19 +128,21 @@ pub struct Lexer {
     cursor: usize,
     line: usize,
     column: usize,
+    reporter: Rc<RefCell<ErrorReporter>>,
 }
 
 impl Lexer {
-    pub fn new(input: String) -> Self {
+    pub fn new(input: String, reporter: Rc<RefCell<ErrorReporter>>) -> Self {
         Self {
             source: input.chars().collect(),
             cursor: 0,
             line: 1,
             column: 1,
+            reporter,
         }
     }
 
-    pub fn tokenize(&mut self) -> Result<Vec<TokenSpan>, String> {
+    pub fn tokenize(&mut self) -> Result<Vec<TokenSpan>, Error> {
         let mut tokens = Vec::new();
 
         while !self.is_at_end() {
@@ -174,8 +195,10 @@ impl Lexer {
         true
     }
 
-    fn next_token(&mut self) -> Result<Option<Token>, String> {
+    fn next_token(&mut self) -> Result<Option<Token>, Error> {
         let c = self.advance();
+        let start_line = self.line;
+        let start_column = self.column.saturating_sub(1);
 
         match c {
             '(' => Ok(Some(Token::LParen)),
@@ -244,17 +267,17 @@ impl Lexer {
             }
             '&' => {
                 if self.match_char('&') { Ok(Some(Token::And)) }
-                else { Err("Expected '&' after '&'".to_string()) }
+                else { Err(self.error_at(start_line, start_column, "Expected '&' after '&'")) }
             }
             '|' => {
                 if self.match_char('|') { Ok(Some(Token::Or)) }
-                else { Err("Expected '|' after '|'".to_string()) }
+                else { Err(self.error_at(start_line, start_column, "Expected '|' after '|'")) }
             }
 
             // Whitespace
             ' ' | '\r' | '\t' => Ok(None), 
 
-            '"' | '\'' => self.string(c).map(Some),
+            '"' | '\'' => self.string(c, start_line, start_column).map(Some),
 
             _ => {
                 if c.is_ascii_digit() {
@@ -262,6 +285,14 @@ impl Lexer {
                 } else if c.is_alphabetic() || c == '_' {
                     Ok(Some(self.identifier()))
                 } else {
+                    self.reporter.borrow_mut().warn(
+                        TokenSpan {
+                            token: Token::UnknownChar(c),
+                            line: start_line,
+                            column: start_column,
+                        },
+                        format!("Unknown character '{}'", c),
+                    );
                     Ok(Some(Token::UnknownChar(c)))
                 }
             }
@@ -348,7 +379,7 @@ impl Lexer {
         Token::Number(val)
     }
 
-    fn string(&mut self, quote_type: char) -> Result<Token, String> {
+    fn string(&mut self, quote_type: char, start_line: usize, start_column: usize) -> Result<Token, Error> {
         let mut text = String::new();
 
         while self.peek() != quote_type && !self.is_at_end() {
@@ -360,11 +391,25 @@ impl Lexer {
         }
 
         if self.is_at_end() {
-            return Err(format!("Unterminated string at line {}", self.line));
+            return Err(self.error_at(start_line, start_column, "Unterminated string"));
         }
 
         self.advance();
 
         Ok(Token::String(text))
+    }
+
+    fn error_at(&self, line: usize, column: usize, msg: &str) -> Error {
+        self.reporter
+            .borrow_mut()
+            .error_with_kind(
+                ErrorKind::Syntax,
+                TokenSpan {
+                    token: Token::None,
+                    line,
+                    column,
+                },
+                msg,
+            )
     }
 }

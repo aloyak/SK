@@ -1,17 +1,21 @@
 use crate::parser::lexer::{Token, TokenSpan};
 use crate::parser::ast::{Expr, IfPolicy, Parameter, Stmt};
-use crate::core::error::Error;
+use crate::core::error::{Error, ErrorKind, ErrorReporter};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 pub struct Parser {
     tokens: Vec<TokenSpan>,
     current: usize,
+    reporter: Rc<RefCell<ErrorReporter>>,
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<TokenSpan>) -> Self {
+    pub fn new(tokens: Vec<TokenSpan>, reporter: Rc<RefCell<ErrorReporter>>) -> Self {
         Self {
             tokens,
             current: 0,
+            reporter,
         }
     }
 
@@ -42,7 +46,7 @@ impl Parser {
             }
             Token::Public => {
                 self.advance();
-                self.consume(Token::Function, "Expected 'fn' after 'pub'.")?;
+                self.consume(Token::Function, "Expected 'fn' after 'pub'")?;
                 self.function_declaration(true)
             }
             Token::Let => {
@@ -95,37 +99,37 @@ impl Parser {
                 let path = self.advance().clone();
                 
                 let alias = if self.match_token(Token::As) {
-                    Some(self.consume_identifier("Expect alias name after 'as'.")?)
+                    Some(self.consume_identifier("Expect alias name after 'as'")?)
                 } else {
                     None
                 };
 
                 Ok(Stmt::Import { path, alias })
             }
-            _ => Err(Error {
-                token: self.peek().clone(),
-                message: "Expect library name or file path after 'import'.".to_string(),
-            }),
+            _ => Err(self.report_error(
+                self.peek().clone(),
+                "Expect library name or file path after 'import'",
+            )),
         }
     }
 
     fn loop_statement(&mut self) -> Result<Stmt, Error> {
         self.skip_newlines();
-        self.consume(Token::LBrace, "Expect '{' before loop body.")?;
+        self.consume(Token::LBrace, "Expect '{' before loop body")?;
         
         let body = self.block()?;
         Ok(Stmt::Loop { body })
     }
 
     fn function_declaration(&mut self, is_public: bool) -> Result<Stmt, Error> {
-        let name = self.consume_identifier("Expect function name.")?;
+        let name = self.consume_identifier("Expect function name")?;
 
-        self.consume(Token::LParen, "Expect '(' after function name.")?;
+        self.consume(Token::LParen, "Expect '(' after function name")?;
         
         let mut parameters = Vec::new();
         if !self.check(&Token::RParen) {
             loop {
-                let param_name = self.consume_identifier("Expect parameter name.")?;
+                let param_name = self.consume_identifier("Expect parameter name")?;
                 let mut default = None;
 
                 if self.match_token(Token::Assign) {
@@ -137,10 +141,10 @@ impl Parser {
             }
         }
         
-        self.consume(Token::RParen, "Expect ')' after parameters.")?;
+        self.consume(Token::RParen, "Expect ')' after parameters")?;
         
         self.skip_newlines();
-        self.consume(Token::LBrace, "Expect '{' before function body.")?;
+        self.consume(Token::LBrace, "Expect '{' before function body")?;
         
         let body = self.block()?; 
 
@@ -153,15 +157,15 @@ impl Parser {
     }
 
     fn symbolic_declaration(&mut self, is_quiet: bool) -> Result<Stmt, Error> {
-        let name = self.consume_identifier("Expect variable name.")?;
-        self.consume(Token::Assign, "Expect '=' after name.")?;
+        let name = self.consume_identifier("Expect variable name")?;
+        self.consume(Token::Assign, "Expect '=' after name")?;
         let initializer = self.expression()?;
         self.end_stmt()?;
         Ok(Stmt::Symbolic { name, initializer, is_quiet })
     }
 
     fn unknown_declaration(&mut self) -> Result<Stmt, Error> {
-        let name = self.consume_identifier("Expect variable name after 'unknown'.")?;
+        let name = self.consume_identifier("Expect variable name after 'unknown'")?;
         self.end_stmt()?;
         
         let unknown_span = TokenSpan { 
@@ -177,8 +181,8 @@ impl Parser {
     }
 
     fn let_declaration(&mut self) -> Result<Stmt, Error> {
-        let name = self.consume_identifier("Expect variable name.")?;
-        self.consume(Token::Assign, "Expect '=' after variable name.")?;
+        let name = self.consume_identifier("Expect variable name")?;
+        self.consume(Token::Assign, "Expect '=' after variable name")?;
         
         let initializer = self.expression()?; 
         
@@ -197,7 +201,7 @@ impl Parser {
             statements.push(self.declaration()?);
         }
         
-        self.consume(Token::RBrace, "Expect '}' after block.")?;
+        self.consume(Token::RBrace, "Expect '}' after block")?;
         Ok(statements)
     }
     
@@ -233,10 +237,12 @@ impl Parser {
                 Token::Strict => IfPolicy::Strict,
                 Token::Merge => IfPolicy::Merge,
                 Token::Panic => IfPolicy::Panic,
-                _ => return Err(Error { 
-                    token: self.previous().clone(), 
-                    message: "Expected policy (strict, merge, panic) after '->'".to_string() 
-                }),
+                _ => {
+                    return Err(self.report_error(
+                        self.previous().clone(),
+                        "Expected policy (strict, merge, panic) after '->'",
+                    ))
+                }
             }
         } else {
             IfPolicy::Strict // Default to strict policy
@@ -342,7 +348,7 @@ impl Parser {
             if self.match_token(Token::LParen) {
                 expr = self.finish_call(expr)?;
             } else if self.match_token(Token::Dot) {
-                let name = self.consume_identifier("Expect property name after '.'.")?;
+                let name = self.consume_identifier("Expect property name after '.'")?;
                 expr = Expr::Get { object: Box::new(expr), name };
             } else {
                 break;
@@ -359,7 +365,7 @@ impl Parser {
                 if !self.match_token(Token::Comma) { break; }
             }
         }
-        let paren = self.consume(Token::RParen, "Expect ')' after arguments.")?.clone();
+        let paren = self.consume(Token::RParen, "Expect ')' after arguments")?.clone();
 
         Ok(Expr::Call {
             callee: Box::new(callee),
@@ -399,32 +405,29 @@ impl Parser {
 
         if self.match_token(Token::LParen) {
             let expr = self.expression()?;
-            self.consume(Token::RParen, "Expect ')' after expression.")?;
+            self.consume(Token::RParen, "Expect ')' after expression")?;
             return Ok(Expr::Grouping { expression: Box::new(expr) });
         }
 
         if self.match_token(Token::LBracket) {
             let min = self.expression()?;
-            self.consume(Token::RangeSep, "Expect '..' in interval.")?;
+            self.consume(Token::RangeSep, "Expect '..' in interval")?;
             let max = self.expression()?;
-            let bracket = self.consume(Token::RBracket, "Expect ']' after interval.")?.clone();
+            let bracket = self.consume(Token::RBracket, "Expect ']' after interval")?.clone();
             return Ok(Expr::Interval { min: Box::new(min), max: Box::new(max), bracket });
         }
 
-        Err(Error { 
-            token: self.peek().clone(), 
-            message: "Expect expression".to_string() 
-        })
+        Err(self.report_error(self.peek().clone(), "Expect expression"))
     }
 
     fn end_stmt(&mut self) -> Result<(), Error> {
         if self.is_at_end() { return Ok(()); }
         if self.match_token(Token::NewLine) { return Ok(()); }
         if self.check(&Token::RBrace) { return Ok(()); }
-        Err(Error { 
-            token: self.peek().clone(), 
-            message: "Expect newline or EOF after statement".to_string() 
-        })
+        Err(self.report_error(
+            self.peek().clone(),
+            "Expect newline or EOF after statement",
+        ))
     }
 
     fn match_token(&mut self, t: Token) -> bool {
@@ -469,10 +472,7 @@ impl Parser {
 
     fn consume(&mut self, t: Token, msg: &str) -> Result<&TokenSpan, Error> {
         if self.check(&t) { return Ok(self.advance()); }
-        Err(Error { 
-            token: self.peek().clone(), 
-            message: msg.to_string() 
-        })
+        Err(self.report_error(self.peek().clone(), msg))
     }
 
     fn peek_type(&self, t: Token) -> bool {
@@ -492,10 +492,13 @@ impl Parser {
                 self.advance();
                 Ok(t)
             },
-            _ => Err(Error { 
-                token: t, 
-                message: msg.to_string() 
-            }),
+            _ => Err(self.report_error(t, msg)),
         }
+    }
+
+    fn report_error(&self, token: TokenSpan, msg: &str) -> Error {
+        self.reporter
+            .borrow_mut()
+            .error_with_kind(ErrorKind::Syntax, token, msg)
     }
 }

@@ -2,7 +2,7 @@ use crate::parser::ast::{Expr, IfPolicy, Stmt};
 use crate::parser::lexer::{Token, TokenSpan};
 use crate::core::value::{Function, SKBool, Value};
 use crate::core::logic;
-use crate::core::error::Error;
+use crate::core::error::{Error, ErrorReporter};
 use crate::evaluator::env::Environment;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -15,13 +15,15 @@ pub enum ControlFlow {
 pub struct Evaluator {
     pub env: Rc<RefCell<Environment>>,
     control_flow: ControlFlow,
+    reporter: Rc<RefCell<ErrorReporter>>,
 }
 
 impl Evaluator {
-    pub fn new(env: Rc<RefCell<Environment>>) -> Self {
+    pub fn new(env: Rc<RefCell<Environment>>, reporter: Rc<RefCell<ErrorReporter>>) -> Self {
         Self { 
             env,
             control_flow: ControlFlow::None,
+            reporter,
         }
     }
 
@@ -35,6 +37,14 @@ impl Evaluator {
 
     pub fn evaluate_expression(&mut self, expr: Expr) -> Result<Value, Error> {
         self.eval_expr(expr)
+    }
+
+    pub fn error(&self, token: TokenSpan, msg: impl Into<String>) -> Error {
+        self.reporter.borrow_mut().error(token, msg)
+    }
+
+    pub fn warn(&self, token: TokenSpan, msg: impl Into<String>) {
+        self.reporter.borrow_mut().warn(token, msg);
     }
 
     fn execute_block(&mut self, statements: Vec<Stmt>, env: Environment) -> Result<Value, Error> {
@@ -95,10 +105,10 @@ impl Evaluator {
                                 Value::Module(Rc::new(RefCell::new(lib_env)))
                             );
                         } else {
-                            return Err(Error {
-                                token: path.clone(),
-                                message: format!("Unknown native library '{}'", lib_name),
-                            });
+                            return Err(self.report_error(
+                                path.clone(),
+                                format!("Unknown native library '{}'", lib_name),
+                            ));
                         }
                     }
 
@@ -113,23 +123,44 @@ impl Evaluator {
                             }
                         }
 
-                        let source = std::fs::read_to_string(&final_path).map_err(|e| Error {
-                            token: path.clone(),
-                            message: format!("Could not find file '{}': {}", file_path, e),
+                        let source = std::fs::read_to_string(&final_path).map_err(|e| {
+                            self.report_error(
+                                path.clone(),
+                                format!("Could not find file '{}': {}", file_path, e),
+                            )
                         })?;
 
-                        let mut lexer = crate::parser::lexer::Lexer::new(source);
-                        let tokens = lexer.tokenize().map_err(|msg| Error { 
-                            token: path.clone(), 
-                            message: msg 
-                        })?;
-                        
-                        let mut parser = crate::parser::parser::Parser::new(tokens);
-                        let statements = parser.parse()?;
+                        let previous = self.reporter.borrow_mut().set_source(
+                            final_path.display().to_string(),
+                            source.clone(),
+                        );
 
-                        let module_env = Rc::new(RefCell::new(Environment::new()));
-                        let mut module_evaluator = Evaluator::new(module_env.clone());
-                        module_evaluator.evaluate(statements)?;
+                        let result = (|| {
+                            let mut lexer = crate::parser::lexer::Lexer::new(
+                                source,
+                                self.reporter.clone(),
+                            );
+                            let tokens = lexer.tokenize()?;
+                            
+                            let mut parser = crate::parser::parser::Parser::new(
+                                tokens,
+                                self.reporter.clone(),
+                            );
+                            let statements = parser.parse()?;
+
+                            let module_env = Rc::new(RefCell::new(Environment::new()));
+                            let mut module_evaluator = Evaluator::new(
+                                module_env.clone(),
+                                self.reporter.clone(),
+                            );
+                            module_evaluator.evaluate(statements)?;
+
+                            Ok::<_, Error>(module_env)
+                        })();
+
+                        self.reporter.borrow_mut().restore_source(previous);
+
+                        let module_env = result?;
 
                         let module_name = if let Some(a) = &alias {
                             a.token_to_string()
@@ -145,10 +176,10 @@ impl Evaluator {
                     }
 
                     _ => {
-                        return Err(Error {
-                            token: path,
-                            message: "Import expects a library name or a string path.".to_string(),
-                        });
+                        return Err(self.report_error(
+                            path,
+                            "Import expects a library name or a string path",
+                        ));
                     }
                 }
                 Ok(Value::None)
@@ -177,7 +208,7 @@ impl Evaluator {
                 let val = self.eval_expr(value)?;
                 if let Token::Identifier(n) = &name.token {
                     if let Err(msg) = self.env.borrow_mut().assign(n, val) {
-                        return Err(Error { token: name, message: msg });
+                        return Err(self.report_error(name, msg));
                     }
                 }
                 Ok(Value::None)
@@ -187,9 +218,14 @@ impl Evaluator {
                 self.print_value(val);
                 Ok(Value::None)
             }
-            Stmt::Panic => {
-                Err(Error { token: TokenSpan { token: Token::Panic, line: 0, column: 0 }, message: "Program panicked!".to_string() })
-            }
+            Stmt::Panic => Err(self.report_error(
+                TokenSpan {
+                    token: Token::Panic,
+                    line: 0,
+                    column: 0,
+                },
+                "Program panicked!",
+            )),
             Stmt::Expression { expression } => self.eval_expr(expression),
             Stmt::If { condition, policy, then_branch, elif_branch, else_branch } => {
                 self.eval_if_chain(condition, *then_branch, &elif_branch, &else_branch, policy)
@@ -270,10 +306,14 @@ impl Evaluator {
         let sk_bool = match cond_val {
             Value::Bool(b) => b,
             _ => {
-                return Err(Error {
-                    token: TokenSpan { token: Token::Unknown, line: 0, column: 0 },
-                    message: "Condition must be a boolean".to_string(),
-                });
+                return Err(self.report_error(
+                    TokenSpan {
+                        token: Token::Unknown,
+                        line: 0,
+                        column: 0,
+                    },
+                    "Condition must be a boolean",
+                ));
             }
         };
 
@@ -283,7 +323,7 @@ impl Evaluator {
             SKBool::Partial => match policy {
                 IfPolicy::Strict => self.eval_next_in_chain(remaining_elifs, &None, policy),
                 IfPolicy::Panic => {
-                    eprintln!("Program panicked! Uncertain condition with panic policy.");
+                    eprintln!("Program panicked! Uncertain condition with panic policy");
                     std::process::exit(1);
                 }
                 IfPolicy::Merge => {
@@ -396,10 +436,7 @@ impl Evaluator {
                 Token::Partial => Ok(Value::Bool(SKBool::Partial)),
                 Token::Unknown => Ok(Value::Unknown),
                 Token::None => Ok(Value::None),
-                _ => Err(Error {
-                    token: value,
-                    message: "Unsupported literal".to_string(),
-                }),
+                _ => Err(self.report_error(value, "Unsupported literal")),
             },
 
             Expr::Variable { name } => {
@@ -414,17 +451,12 @@ impl Evaluator {
                     Token::Impossible => "impossible",
                     Token::Str => "str",
                     Token::Num => "num",
-                    _ => {
-                        return Err(Error {
-                            token: name,
-                            message: "Expected identifier".to_string(),
-                        })
-                    }
+                    _ => return Err(self.report_error(name, "Expected identifier")),
                 };
-                self.env.borrow().get(name_str).map_err(|msg| Error {
-                    token: name,
-                    message: msg,
-                })
+                self.env
+                    .borrow()
+                    .get(name_str)
+                    .map_err(|msg| self.report_error(name, msg))
             }
 
             Expr::Interval { min, max, bracket } => {
@@ -432,10 +464,10 @@ impl Evaluator {
                 let high = self.eval_expr(*max)?;
                 match (low, high) {
                     (Value::Number(l), Value::Number(h)) => Ok(Value::Interval(l, h)),
-                    _ => Err(Error {
-                        token: bracket,
-                        message: "Interval bounds must be numbers".to_string(),
-                    }),
+                    _ => Err(self.report_error(
+                        bracket,
+                        "Interval bounds must be numbers",
+                    )),
                 }
             }
 
@@ -454,10 +486,7 @@ impl Evaluator {
                 match (operator.token.clone(), val) {
                     (Token::Minus, Value::Number(n)) => Ok(Value::Number(-n)),
                     (Token::Bang, Value::Bool(b)) => Ok(Value::Bool(logic::not(b))),
-                    _ => Err(Error {
-                        token: operator,
-                        message: "Invalid unary operation".to_string(),
-                    }),
+                    _ => Err(self.report_error(operator, "Invalid unary operation")),
                 }
             }
 
@@ -491,28 +520,35 @@ impl Evaluator {
                             } else if let Some(default_expr) = &param.default {
                                 self.eval_expr(default_expr.clone())?
                             } else {
-                                return Err(Error {
-                                    token: paren.clone(),
-                                    message: format!("Missing required argument '{}'", param.name.token_to_string()),
-                                });
+                                return Err(self.report_error(
+                                    paren.clone(),
+                                    format!(
+                                        "Missing required argument '{}'",
+                                        param.name.token_to_string()
+                                    ),
+                                ));
                             };
 
                             call_env.define(param.name.token_to_string(), value);
                         }
 
                         if eval_args.len() > func.params.len() {
-                            return Err(Error {
-                                token: paren,
-                                message: format!("Expected at most {} args, got {}", func.params.len(), eval_args.len()),
-                            });
+                            return Err(self.report_error(
+                                paren,
+                                format!(
+                                    "Expected at most {} args, got {}",
+                                    func.params.len(),
+                                    eval_args.len()
+                                ),
+                            ));
                         }
 
                         self.execute_block(func.body.clone(), call_env)
                     }
-                    _ => Err(Error {
-                        token: paren,
-                        message: format!("Value '{}' is not callable", callee_val),
-                    }),
+                    _ => Err(self.report_error(
+                        paren,
+                        format!("Value '{}' is not callable", callee_val),
+                    )),
                 }
             }
 
@@ -524,27 +560,27 @@ impl Evaluator {
                         _ => unreachable!(),
                     };
                     
-                    let val = mod_env.borrow().get(member_name).map_err(|msg| Error {
-                        token: name.clone(), 
-                        message: msg,
-                    })?;
+                    let val = mod_env
+                        .borrow()
+                        .get(member_name)
+                        .map_err(|msg| self.report_error(name.clone(), msg))?;
 
                     // Check if private
                     if let Value::Function(func) = &val {
                         if !func.is_public {
-                            return Err(Error {
-                                token: name.clone(),
-                                message: format!("Function '{}' is private!", member_name)
-                            });
+                            return Err(self.report_error(
+                                name.clone(),
+                                format!("Function '{}' is private!", member_name),
+                            ));
                         }
                     }
 
                     Ok(val)
                 } else {
-                    Err(Error {
-                        token: name.clone(),
-                        message: "Only modules have properties.".to_string(),
-                    })
+                    Err(self.report_error(
+                        name.clone(),
+                        "Only modules have properties!",
+                    ))
                 }
             }
         }
@@ -601,10 +637,7 @@ impl Evaluator {
         match res {
             Ok(val) => Ok(val),
             Err(_) if is_symbolic => self.propagate_symbolic(left, op, right),
-            Err(msg) => Err(Error {
-                token: op,
-                message: msg,
-            }),
+            Err(msg) => Err(self.report_error(op, msg)),
         }
     }
 
@@ -697,5 +730,9 @@ impl Evaluator {
             expression: Box::new(expression),
             is_quiet,
         })
+    }
+
+    fn report_error(&self, token: TokenSpan, msg: impl Into<String>) -> Error {
+        self.error(token, msg)
     }
 }

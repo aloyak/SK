@@ -1,3 +1,4 @@
+use std::io;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process;
@@ -18,9 +19,12 @@ fn run(path: &Path) {
             if value != Value::None {
                 println!("{}", value);
             }
+            for warning in interpreter.take_warnings() {
+                eprintln!("{}", warning);
+            }
         }
         Err(e) => {
-            log::error!("{}", e);
+            eprintln!("{}", e);
             process::exit(1)
         }
     }
@@ -55,8 +59,11 @@ fn run_repl() {
                         if value != Value::None {
                             println!("{}", value);
                         }
+                        for warning in interpreter.take_warnings() {
+                            eprintln!("{}", warning);
+                        }
                     }
-                    Err(e) => eprintln!("Error: {}", e),
+                    Err(e) => eprintln!("{}", e),
                 }
             },
             Err(err) => {
@@ -74,18 +81,28 @@ fn check(path: &Path) -> Result<(), String> {
 
     match path.extension().and_then(|e| e.to_str()) {
         Some("sk") => {}
-        _ => log::warn!("Consider using the '.sk' extension!"),
+        _ => eprintln!("Warning: Consider using the '.sk' extension!"),
     }
 
     Ok(())
 }
 
-fn main() {
-    env_logger::Builder::new()
-        .filter_level(log::LevelFilter::Warn)
-        .format_timestamp(None)
-        .init();
+fn create_proj(name: String) {
+    let mut path = PathBuf::from(&name);
+    if path.exists() {
+        eprintln!("Error: A file or directory with the name '{}' already exists!", name);
+        process::exit(1);
+    }
 
+    std::fs::create_dir(&path).expect("Failed to create project directory");
+    path.push("main.sk");
+
+    std::fs::write(&path, 
+        &format!("// SK Version: {}\n\nprint('Hello, World!')", VERSION)
+    ).expect("Failed to create main.sk");
+}
+
+fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
@@ -111,12 +128,24 @@ fn main() {
     let mut path = PathBuf::from(&args[0]);
 
     if args.contains(&"--project".to_string()) {
+        if &args[1] == "new" {
+            
+            let mut name = String::new();
+            println!("New Project's Name:");
+            io::stdin().read_line(&mut name).expect("Failed to read line");
+            let name = name.trim().to_string();
+
+            create_proj(name);
+
+            process::exit(0);
+        }
+
         path = PathBuf::from(&args[1]);
         path.push("main.sk");
     }
     
     if let Err(e) = check(&path) {  // check file is valid
-        log::error!("{}", e);
+        eprintln!("Error: {}", e);
         process::exit(1)
     }
 
@@ -128,6 +157,7 @@ fn help() {
     println!("usage: {} : starts a repl interpreter.", NAME);
     println!("       {} <filename> : runs the file at the given path.", NAME);
     println!("       {} --project <path> : runs 'main.sk' at the given path.", NAME);
+    println!("       {} --project new : creates a new project.", NAME);
     println!("       {} --version : shows interpreter's version.", NAME);
     println!("       {} --help : shows this dialog.", NAME);
 }

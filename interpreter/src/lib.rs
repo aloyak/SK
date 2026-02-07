@@ -13,54 +13,59 @@ use crate::parser::parser::Parser;
 use crate::evaluator::eval::Evaluator;
 use crate::evaluator::env::Environment;
 use crate::core::value::Value;
-use crate::core::error::Error;
+use crate::core::error::{Error, ErrorReporter, Warning};
 
 pub struct SKInterpreter {
     env: Rc<RefCell<Environment>>,
+    reporter: Rc<RefCell<ErrorReporter>>,
 }
 
 impl SKInterpreter {
     pub fn new() -> Self {
         Self {
             env: Rc::new(RefCell::new(Environment::new())),
+            reporter: Rc::new(RefCell::new(ErrorReporter::new())),
         }
     }
 
+    pub fn take_warnings(&mut self) -> Vec<Warning> {
+        self.reporter.borrow_mut().take_warnings()
+    }
+
     pub fn execute(&mut self, source: &Path) -> Result<Value, Error> {
-        let raw = fs::read_to_string(source).map_err(|e| Error {
-            token: TokenSpan {
-                token: Token::None,
-                line: 0,
-                column: 0,
-            },
-            message: format!("{}", e),
+        let raw = fs::read_to_string(source).map_err(|e| {
+            self.reporter
+                .borrow_mut()
+                .error(TokenSpan {
+                    token: Token::None,
+                    line: 0,
+                    column: 0,
+                }, format!("{}", e))
         })?;
 
-        self.execute_string(raw)
+        self.execute_named(source.display().to_string(), raw)
     }
 
     pub fn execute_string(&mut self, source: String) -> Result<Value, Error> {
-        let mut lexer = Lexer::new(source);
-        let tokens = lexer.tokenize().map_err(|msg| Error {
-            token: TokenSpan {
-                token: Token::None,
-                line: 0,
-                column: 0,
-            },
-            message: msg,
-        })?;
+        self.execute_named("<repl>".to_string(), source)
+    }
 
-        let mut parser = Parser::new(tokens);
-        let ast = parser.parse().map_err(|msg| Error {
-            token: TokenSpan {
-                token: Token::None,
-                line: 0,
-                column: 0,
-            },
-            message: msg.to_string(),
-        })?;
+    fn execute_named(&mut self, name: String, source: String) -> Result<Value, Error> {
+        let previous = self.reporter.borrow_mut().set_source(name, source.clone());
 
-        let mut evaluator = Evaluator::new(self.env.clone());
-        evaluator.evaluate(ast)
+        let result = (|| {
+            let mut lexer = Lexer::new(source, self.reporter.clone());
+            let tokens = lexer.tokenize()?;
+
+            let mut parser = Parser::new(tokens, self.reporter.clone());
+            let ast = parser.parse()?;
+
+            let mut evaluator = Evaluator::new(self.env.clone(), self.reporter.clone());
+            evaluator.evaluate(ast)
+        })();
+
+        self.reporter.borrow_mut().restore_source(previous);
+
+        result
     }
 }

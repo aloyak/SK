@@ -61,7 +61,7 @@ impl Environment {
             return enclosing.borrow().get(name);
         }
 
-        Err(format!("Use of undefined variable '{}'.", name))
+        Err(format!("Use of undefined variable '{}'", name))
     }
 
     pub fn assign(&mut self, name: &str, value: Value) -> Result<(), String> {
@@ -74,6 +74,6 @@ impl Environment {
             return enclosing.borrow_mut().assign(name, value);
         }
 
-        Err(format!("Undefined variable '{}'.", name))
+        Err(format!("Undefined variable '{}'", name))
     }
 }

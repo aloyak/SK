@@ -103,10 +103,14 @@ impl Value {
     }
 
     fn err(msg: String) -> Error {
-        Error {
-            token: TokenSpan { token: Token::Unknown, line: 0, column: 0 },
-            message: msg
-        }
+        Error::new(
+            TokenSpan {
+                token: Token::Unknown,
+                line: 0,
+                column: 0,
+            },
+            msg,
+        )
     }
 
     pub fn add(&self, other: &Value) -> Result<Value, Error> {
