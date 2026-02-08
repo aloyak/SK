@@ -1,8 +1,10 @@
+import math
+
 let A = [0..10]
 let B = [5..15]
 
-print(width(A))
-print(mid(A))
+print(math.width(A))
+print(math.mid(A))
 
-print(union(A, B))
-print(intersect(A, B))
+print(math.union(A, B))
+print(math.intersect(A, B))
