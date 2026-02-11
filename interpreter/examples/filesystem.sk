@@ -1,0 +1,10 @@
+import fs
+
+let file = fs.open("./examples/assets/myfile.txt", "rw")
+let content = fs.read(file)
+print(content)
+
+fs.write(file, "append me!", true) // true: append is enabled
+fs.close(file)
+
+// See ./examples/assets/myfile.txt 
