@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import Editor from '@monaco-editor/react';
+import { Plus, Minus } from 'lucide-react';
 
 const ANSI_PATTERN = /\x1b\[([0-9;]*)m/g;
 const ANSI_COLORS = {
@@ -55,12 +57,36 @@ const parseAnsi = (text) => {
 const IDE = ({ code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme }) => {
   const outputText = typeof output === 'string' ? output : String(output ?? '');
   const outputSegments = parseAnsi(outputText);
+  const [fontSize, setFontSize] = useState(24);
+  const minFontSize = 16;
+  const maxFontSize = 40;
+
+  const adjustFontSize = (diff) => {
+    setFontSize((size) => Math.min(maxFontSize, Math.max(minFontSize, size + diff)));
+  };
 
   return (
     <div className="flex-1 flex gap-2 overflow-hidden pb-6">
       <div className={`flex-1 flex flex-col ${theme.card} border-2 ${theme.border} rounded-[2rem] overflow-hidden shadow-2xl`}>
         <div className="h-24 flex items-center px-10 border-b-2 border-white/5">
           <span className="text-4xl font-black text-white tracking-tight">Input</span>
+          <div className="ml-auto items-center gap-3 bg-[#4f4f4f]/10 rounded-[20px] px-4 py-2 flex">
+              <button
+                className="w-8 h-8 text-white/50 hover:text-white transition-colors cursor-pointer"
+                onClick={() => adjustFontSize(1)}
+                disabled={fontSize >= maxFontSize}
+              >
+                <Plus/>
+              </button>
+              <button
+                className="w-8 h-8 text-white/50 hover:text-white transition-colors cursor-pointer"
+                onClick={() => adjustFontSize(-1)}
+                disabled={fontSize <= minFontSize}
+              >
+                <Minus/>
+              </button>
+          </div>
+          
         </div>
         <div className="flex-1 select-text">
           <Editor
@@ -72,14 +98,14 @@ const IDE = ({ code, setCode, output, command, outputWidth, startResizing, handl
             loading={<div className="h-full w-full bg-[#0a0a0f]" />}
             onChange={(value) => setCode(value)}
             options={{
-              fontSize: 24,
+              fontSize,
               minimap: { enabled: false },
               lineNumbersMinChars: 4,
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
               scrollBeyondLastLine: false,
               automaticLayout: true,
               padding: { top: 40 },
-              lineHeight: 40,
+              lineHeight: Math.round(fontSize * 1.6),
               renderLineHighlight: 'none',
               scrollbar: { vertical: 'hidden' },
             }}
