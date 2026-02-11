@@ -93,7 +93,7 @@ function AppRoutes({ theme }) {
     monaco.languages.setMonarchTokensProvider('sk', {
       tokenizer: {
         root: [
-          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|break|continue)\b/, 'keyword'],
+          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|break|continue|merge|panic|strict)\b/, 'keyword'],
           [/\b(certain|possible|impossible|known)\b/, 'builtins'],
           [/panic!/, 'builtins'],
           [/\b(print|input|str|num|kind|resolve)\b/, 'builtins'],

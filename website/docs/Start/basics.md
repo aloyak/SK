@@ -2,7 +2,7 @@
 
 ## Interpreter Basics
 
-This file explains the usage of the SK interpreter, if you haven't installed it yet, go to Docs / Installation
+This document explains the usage of the SK interpreter, if you haven't installed it yet, go to Docs / Installation
 
 ### Usage:
 ```sh
@@ -41,5 +41,6 @@ To make the Web IDE safe, The ```--safe``` flag was added, this removes the foll
 
 * ```os.command()```, disabled so no arbitrary code could be ran and other obvious server attacks
 * ```loops```, disabled as they would cause a memory leak that would freeze the website entirely
+* All the functions of the file system (```fs```) library.
 
 > If you must use these features, download the interpreter! See more information at Start/Installation
