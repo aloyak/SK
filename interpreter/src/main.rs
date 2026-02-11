@@ -34,7 +34,7 @@ fn run_repl(safe_mode: bool) {
     let mut interpreter = SKInterpreter::new_with_options(safe_mode);
     let mut rl = DefaultEditor::new().expect("Failed to create editor");
     
-    println!("{} REPL ({}). Type 'exit!' to quit.", NAME, VERSION);
+    println!("{} REPL ({}). Type 'exit!' to quit and 'clear!' to clear the screen.", NAME, VERSION);
 
     loop {
         let readline = rl.readline(">> ");
@@ -45,6 +45,19 @@ fn run_repl(safe_mode: bool) {
                 
                 if source == "exit!" {
                     break;
+                } else if source == "clear!" {
+                    #[cfg(windows)] // Why does windows allways have to be different :(
+                    {
+                        let _ = process::Command::new("cmd")
+                            .arg("/C")
+                            .arg("cls")
+                            .status();
+                    }
+                    #[cfg(not(windows))]
+                    {
+                        let _ = process::Command::new("clear").status();
+                    }
+                    continue;
                 }
                 
                 if source.is_empty() {

@@ -389,24 +389,58 @@ impl Lexer {
     }
 
     fn string(&mut self, quote_type: char, start_line: usize, start_column: usize) -> Result<Token, Error> {
-        let mut text = String::new();
+            let mut text = String::new();
 
-        while self.peek() != quote_type && !self.is_at_end() {
-            if self.peek() == '\n' {
-                self.line += 1;
-                self.column = 1;
+            while self.peek() != quote_type && !self.is_at_end() {
+                if self.peek() == '\n' {
+                    self.line += 1;
+                    self.column = 1;
+                }
+
+                let c = self.advance();
+                
+                if c == '\\' {
+                    match self.peek() {
+                        'n' => {
+                            text.push('\n');
+                            self.advance();
+                        }
+                        't' => {
+                            text.push('\t');
+                            self.advance();
+                        }
+                        'r' => {
+                            text.push('\r');
+                            self.advance();
+                        }
+                        '\\' => {
+                            text.push('\\');
+                            self.advance();
+                        }
+                        '"' => {
+                            text.push('\"');
+                            self.advance();
+                        }
+                        '\'' => {
+                            text.push('\'');
+                            self.advance();
+                        }
+                        _ => {
+                            text.push('\\');
+                        }
+                    }
+                } else {
+                    text.push(c);
+                }
             }
-            text.push(self.advance());
+
+            if self.is_at_end() {
+                return Err(self.error_at(start_line, start_column, "Unterminated string"));
+            }
+
+            self.advance();
+            Ok(Token::String(text))
         }
-
-        if self.is_at_end() {
-            return Err(self.error_at(start_line, start_column, "Unterminated string"));
-        }
-
-        self.advance();
-
-        Ok(Token::String(text))
-    }
 
     fn error_at(&self, line: usize, column: usize, msg: &str) -> Error {
         self.reporter
