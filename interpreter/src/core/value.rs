@@ -73,6 +73,7 @@ impl Value {
                     Token::Star => "*",
                     Token::Slash => "/",
                     Token::Caret => "^",
+                    Token::Modulo => "%",
                     Token::EqualEqual => "==",
                     Token::BangEqual => "!=",
                     Token::Greater => ">",
@@ -255,6 +256,18 @@ impl Value {
                 Ok(Value::Interval(low, high))
             },
             _ => Err(Self::err("Invalid types for exponentiation".to_string())),
+        }
+    }
+
+    pub fn modulo(&self, other: &Value) -> Result<Value, Error> {
+        match (self, other) {
+            (Value::Number(a), Value::Number(b)) => {
+                if *b == 0.0 {
+                    return Err(Self::err("Modulo by zero!".to_string()));
+                }
+                Ok(Value::Number(a % b))
+            }
+            _ => Err(Self::err("Invalid types for modulo".to_string())),
         }
     }
 

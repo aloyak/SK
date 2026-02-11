@@ -4,11 +4,16 @@ use sk_lang::core::value::Value;
 #[test]
 fn evals_basic_expression() {
 	let mut interpreter = SKInterpreter::new();
-	let result = interpreter
+	let result1 = interpreter
 		.execute_string("1 + 2".to_string())
 		.expect("execution should succeed");
 
-	assert_eq!(result, Value::Number(3.0));
+    let result2 = interpreter
+		.execute_string("5 % 2".to_string())
+		.expect("execution should succeed");
+
+	assert_eq!(result1, Value::Number(3.0));
+	assert_eq!(result2, Value::Number(1.0));
 }
 
 #[test]
@@ -49,26 +54,6 @@ fn evals_if_expression() {
         .expect("execution should succeed");
 
     assert_eq!(result, Value::Interval(1.0, 2.0));
-}
-
-#[test]
-fn library_import() {
-    let mut interpreter = SKInterpreter::new();
-    let result = interpreter
-        .execute_string("import math\nmath.sqrt(16)".to_string())
-        .expect("execution should succeed");
-
-    assert_eq!(result, Value::Number(4.0));
-}
-
-#[test]
-fn library_import_alias() {
-    let mut interpreter = SKInterpreter::new();
-    let result = interpreter
-        .execute_string("import math as m\nm.sqrt(25)".to_string())
-        .expect("execution should succeed");
-
-    assert_eq!(result, Value::Number(5.0));
 }
 
 #[test]
@@ -134,4 +119,46 @@ fn evals_symbolics() {
     assert_eq!(result1, Value::Number(2.0));
     assert_eq!(result2, Value::Number(12.0));
     assert!(matches!(result3, Value::Symbolic { is_quiet: false, .. }));
+}
+
+#[test]
+fn evals_increments() {
+    let mut interpreter = SKInterpreter::new();
+    let result1 = interpreter.execute_string("let x = 2\nx++".to_string())
+        .expect("execution should succeed");
+    let result2 = interpreter.execute_string("let x = 2\nx--".to_string())
+        .expect("execution should succeed");
+    
+    assert_eq!(result1, Value::Number(3.0));
+    assert_eq!(result2, Value::Number(1.0));
+}
+
+#[test]
+fn evals_intervals() {
+    let mut interpreter = SKInterpreter::new();
+    let result = interpreter
+        .execute_string("let x = [-10..10]\nx".to_string())
+        .expect("execution should succeed");
+
+    assert_eq!(result, Value::Interval(-10.0, 10.0));
+}
+
+#[test]
+fn library_import() {
+    let mut interpreter = SKInterpreter::new();
+    let result = interpreter
+        .execute_string("import math\nmath.sqrt(16)".to_string())
+        .expect("execution should succeed");
+
+    assert_eq!(result, Value::Number(4.0));
+}
+
+#[test]
+fn library_import_alias() {
+    let mut interpreter = SKInterpreter::new();
+    let result = interpreter
+        .execute_string("import math as m\nm.sqrt(25)".to_string())
+        .expect("execution should succeed");
+
+    assert_eq!(result, Value::Number(5.0));
 }

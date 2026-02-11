@@ -644,6 +644,7 @@ impl Evaluator {
             Token::Star => left.mul(&right).map_err(|e| e.message),
             Token::Slash => left.div(&right).map_err(|e| e.message),
             Token::Caret => left.pow(&right).map_err(|e| e.message),
+            Token::Modulo => left.modulo(&right).map_err(|e| e.message),
 
             Token::EqualEqual
             | Token::BangEqual

@@ -21,6 +21,8 @@ print(kind(str(number)))
 print("This is my fav variable:" + " " + str(interval))
 print("[-2..2] ^ 2 = " + str([-2..2] ^ 2))
 
+print(42 % 2)
+
 panic!
 
 print("This shouldn't be printed out!")

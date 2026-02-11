@@ -325,7 +325,7 @@ impl Parser {
     }
 
     fn multiplication(&mut self) -> Result<Expr, Error> {
-        self.binary(Self::power, &[Token::Star, Token::Slash])
+        self.binary(Self::power, &[Token::Star, Token::Slash, Token::Modulo])
     }
 
     fn power(&mut self) -> Result<Expr, Error> {

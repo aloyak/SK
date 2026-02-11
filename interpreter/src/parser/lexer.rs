@@ -50,6 +50,7 @@ pub enum Token {
     Slash,
     Caret,
     RangeSep,
+    Modulo,
     
     // Delimiters
     LParen,
@@ -212,6 +213,7 @@ impl Lexer {
             '}' => Ok(Some(Token::RBrace)),
             ',' => Ok(Some(Token::Comma)),
             '*' => Ok(Some(Token::Star)),
+            '%' => Ok(Some(Token::Modulo)),
             '^' => Ok(Some(Token::Caret)),
 
             '/' => {
