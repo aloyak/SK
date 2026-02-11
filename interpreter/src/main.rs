@@ -11,8 +11,8 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 use sk_lang::SKInterpreter;
 use sk_lang::core::value::Value;
 
-fn run(path: &Path) {
-    let mut interpreter = SKInterpreter::new();
+fn run(path: &Path, safe_mode: bool) {
+    let mut interpreter = SKInterpreter::new_with_options(safe_mode);
 
     match interpreter.execute(&path) {
         Ok(value) => {
@@ -30,11 +30,11 @@ fn run(path: &Path) {
     }
 }
 
-fn run_repl() {
-    let mut interpreter = SKInterpreter::new();
+fn run_repl(safe_mode: bool) {
+    let mut interpreter = SKInterpreter::new_with_options(safe_mode);
     let mut rl = DefaultEditor::new().expect("Failed to create editor");
     
-    println!("{} REPL ({}). Type 'exit' to quit.", NAME, VERSION);
+    println!("{} REPL ({}). Type 'exit!' to quit.", NAME, VERSION);
 
     loop {
         let readline = rl.readline(">> ");
@@ -43,7 +43,7 @@ fn run_repl() {
             Ok(line) => {
                 let source = line.trim();
                 
-                if source == "exit" {
+                if source == "exit!" {
                     break;
                 }
                 
@@ -98,15 +98,20 @@ fn create_proj(name: String) {
     path.push("main.sk");
 
     std::fs::write(&path, 
-        &format!("// SK Version: {}\n\nprint('Hello, World!')", VERSION)
+        &format!("// {} Version: {}\n\nprint('Hello, World!')", NAME, VERSION)
     ).expect("Failed to create main.sk");
 }
 
 fn main() {
-    let args: Vec<String> = env::args().skip(1).collect();
+    let raw_args: Vec<String> = env::args().skip(1).collect();
+    let safe_mode = raw_args.iter().any(|arg| arg == "--safe");
+    let args: Vec<String> = raw_args
+        .into_iter()
+        .filter(|arg| arg != "--safe")
+        .collect();
 
     if args.is_empty() {
-        run_repl();
+        run_repl(safe_mode);
         return;
     }
 
@@ -149,7 +154,7 @@ fn main() {
         process::exit(1)
     }
 
-    run(&path);
+    run(&path, safe_mode);
 }
 
 fn help() {
@@ -159,5 +164,6 @@ fn help() {
     println!("       {} --project <path> : runs 'main.sk' at the given path.", NAME);
     println!("       {} --project new : creates a new project.", NAME);
     println!("       {} --version : shows interpreter's version.", NAME);
+    println!("       {} --safe : disables some features for website's IDE security", NAME);
     println!("       {} --help : shows this dialog.", NAME);
 }

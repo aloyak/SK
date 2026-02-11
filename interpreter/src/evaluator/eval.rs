@@ -16,15 +16,25 @@ pub struct Evaluator {
     pub env: Rc<RefCell<Environment>>,
     control_flow: ControlFlow,
     reporter: Rc<RefCell<ErrorReporter>>,
+    safe_mode: bool,
 }
 
 impl Evaluator {
-    pub fn new(env: Rc<RefCell<Environment>>, reporter: Rc<RefCell<ErrorReporter>>) -> Self {
+    pub fn new(
+        env: Rc<RefCell<Environment>>,
+        reporter: Rc<RefCell<ErrorReporter>>,
+        safe_mode: bool,
+    ) -> Self {
         Self { 
             env,
             control_flow: ControlFlow::None,
             reporter,
+            safe_mode,
         }
+    }
+
+    pub fn is_safe_mode(&self) -> bool {
+        self.safe_mode
     }
 
     pub fn evaluate(&mut self, statements: Vec<Stmt>) -> Result<Value, Error> {
@@ -152,6 +162,7 @@ impl Evaluator {
                             let mut module_evaluator = Evaluator::new(
                                 module_env.clone(),
                                 self.reporter.clone(),
+                                self.safe_mode,
                             );
                             module_evaluator.evaluate(statements)?;
 
@@ -215,7 +226,7 @@ impl Evaluator {
             }
             Stmt::Print { expression } => { // Helper function to display values, not the built-in print()
                 let val = self.eval_expr(expression)?;
-                self.print_value(val);
+                println!("{}", val);
                 Ok(Value::None)
             }
             Stmt::Panic => Err(self.report_error(
@@ -236,6 +247,16 @@ impl Evaluator {
                 Ok(Value::None)
             }
             Stmt::Loop { body } => {
+                if self.safe_mode {
+                    return Err(self.report_error(
+                        TokenSpan {
+                            token: Token::Loop,
+                            line: 0,
+                            column: 0,
+                        },
+                        "Loops are disabled in --safe mode. Download the SK interpreter!",
+                    ));
+                }
                 loop {
                     self.control_flow = ControlFlow::None;
                     let new_env = Environment::new_enclosed(self.env.clone());
@@ -274,23 +295,6 @@ impl Evaluator {
                 self.control_flow = ControlFlow::Continue;
                 Ok(Value::None)
             }
-        }
-    }
-
-    fn print_value(&mut self, val: Value) {
-        match val {
-            Value::Symbolic { ref expression, is_quiet } => {
-                if is_quiet {
-                    if let Ok(resolved) = self.evaluate_expression(*expression.clone()) {
-                        println!("{}", resolved);
-                    } else {
-                        println!("Error resolving quiet symbolic");
-                    }
-                } else {
-                    println!("{}", self.format_symbolic(expression));
-                }
-            }
-            _ => println!("{}", val),
         }
     }
 
@@ -363,63 +367,6 @@ impl Evaluator {
         }
     }
 
-    fn format_symbolic(&self, expr: &Expr) -> String {
-        match expr {
-            Expr::Binary { left, operator, right } => {
-                let l = self.format_symbolic(left);
-                let r = self.format_symbolic(right);
-                let op = match operator.token {
-                    Token::Plus => "+",
-                    Token::Minus => "-",
-                    Token::Star => "*",
-                    Token::Slash => "/",
-                    Token::Caret => "^",
-                    Token::EqualEqual => "==",
-                    Token::BangEqual => "!=",
-                    Token::Greater => ">",
-                    Token::GreaterEqual => ">=",
-                    Token::Less => "<",
-                    Token::LessEqual => "<=",
-                    Token::And => "&&",
-                    Token::Or => "||",
-                    _ => "?",
-                };
-                format!("({} {} {})", l, op, r)
-            }
-            Expr::Literal { value } => match &value.token {
-                Token::Number(n) => format!("{}", n),
-                Token::Unknown => "unknown".to_string(),
-                Token::String(s) => s.clone(),
-                Token::True => "true".to_string(),
-                Token::False => "false".to_string(),
-                Token::Partial => "partial".to_string(),
-                _ => format!("{:?}", value.token),
-            },
-            Expr::Variable { name } => {
-                if let Token::Identifier(n) = &name.token {
-                    n.clone()
-                } else {
-                    format!("{:?}", name.token)
-                }
-            }
-            Expr::Grouping { expression } => format!("({})", self.format_symbolic(expression)),
-            Expr::Block { .. } => "{...}".to_string(),
-            Expr::Postfix { name, operator } => {
-                let n = match &name.token {
-                    Token::Identifier(s) => s.as_str(),
-                    _ => "?",
-                };
-                let op = match operator.token {
-                    Token::Increment => "++",
-                    Token::Decrement => "--",
-                    _ => "?",
-                };
-                format!("{}{}", n, op)
-            }
-            _ => "...".to_string(),
-        }
-    }
-
     fn value_to_token(&self, value: Value) -> Token {
         match value {
             Value::Number(n) => Token::Number(n),
@@ -465,10 +412,18 @@ impl Evaluator {
                     Token::Num => "num",
                     _ => return Err(self.report_error(name, "Expected identifier")),
                 };
-                self.env
+                let value = self
+                    .env
                     .borrow()
                     .get(name_str)
-                    .map_err(|msg| self.report_error(name, msg))
+                    .map_err(|msg| self.report_error(name.clone(), msg))?;
+
+                match value {
+                    Value::Symbolic { expression, is_quiet: true } => {
+                        self.evaluate_expression(*expression)
+                    }
+                    _ => Ok(value),
+                }
             }
 
             Expr::Postfix { name, operator } => {

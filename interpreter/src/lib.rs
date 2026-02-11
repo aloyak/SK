@@ -18,13 +18,19 @@ use crate::core::error::{Error, ErrorReporter, Warning};
 pub struct SKInterpreter {
     env: Rc<RefCell<Environment>>,
     reporter: Rc<RefCell<ErrorReporter>>,
+    safe_mode: bool,
 }
 
 impl SKInterpreter {
     pub fn new() -> Self {
+        Self::new_with_options(false)
+    }
+
+    pub fn new_with_options(safe_mode: bool) -> Self {
         Self {
             env: Rc::new(RefCell::new(Environment::new())),
             reporter: Rc::new(RefCell::new(ErrorReporter::new())),
+            safe_mode, // Dont really like this solution but its the easiest for now...
         }
     }
 
@@ -60,7 +66,7 @@ impl SKInterpreter {
             let mut parser = Parser::new(tokens, self.reporter.clone());
             let ast = parser.parse()?;
 
-            let mut evaluator = Evaluator::new(self.env.clone(), self.reporter.clone());
+            let mut evaluator = Evaluator::new(self.env.clone(), self.reporter.clone(), self.safe_mode);
             evaluator.evaluate(ast)
         })();
 

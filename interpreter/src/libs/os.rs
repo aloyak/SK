@@ -18,6 +18,10 @@ pub fn name(_args: Vec<Value>, _span: TokenSpan, _: &mut Evaluator) -> Result<Va
 }
 
 pub fn command(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
+    if eval.is_safe_mode() {
+        return Err(eval.error(span, "os.command() is disabled in --safe mode. Download the SK interpreter!"));
+    }
+
     if args.is_empty() {
         return Err(eval.error(span, "command() requires at least one argument"));
     }
