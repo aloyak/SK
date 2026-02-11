@@ -76,7 +76,7 @@
       "patterns": [
         {
           "name": "keyword.operator.arithmetic.sk",
-          "match": "\\+|-|\\*|/|\\^"
+          "match": "\\+|-|\\*|/|\\^|%"
         },
         {
           "name": "keyword.operator.comparison.sk",
