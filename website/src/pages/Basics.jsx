@@ -57,7 +57,7 @@ const Basics = ({ theme }) => {
                   <code className="text-sm text-slate-300">cargo install sk-lang</code>
                   <button 
                     onClick={() => copyToClipboard('cargo install sk-lang')}
-                    className="text-slate-500 hover:text-white transition-colors"
+                    className="cursor-pointer text-slate-500 hover:text-white transition-colors"
                   >
                     {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                   </button>
@@ -76,7 +76,7 @@ const Basics = ({ theme }) => {
 
             <div className={`${theme.card} border ${theme.border} rounded-2xl p-6`}>
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Other Features</h3>
+                <h3 className="text-xs font-black text-white uppercase tracking-[0.2em]">Other Cool Features</h3>
               </div>
               <ul className="space-y-3">
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
@@ -92,7 +92,7 @@ const Basics = ({ theme }) => {
                   <span className="text-white">•</span> Math, Random, Os and Time Libraries
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
-                  <span className="text-white">•</span> REPL Interpreter Mode
+                  <span className="text-white">•</span> REPL Interpreter
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
                   <span className="text-white">•</span> VS Code Extension

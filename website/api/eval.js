@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       const tempFile = path.join('/tmp', `code-${Date.now()}.sk`);
       fs.writeFileSync(tempFile, code);
 
-      const child = spawn(activePath, [tempFile]);
+      const child = spawn(activePath, [tempFile, '--safe']);
       let output = '';
       let error = '';
 

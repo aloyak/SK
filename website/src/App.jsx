@@ -153,7 +153,7 @@ function AppRoutes({ theme }) {
   };
 
   const handleRun = async () => {
-    setCommand('SK main.sk');
+    setCommand('SK --safe main.sk');
     setOutput('Running...');
 
     const inputMatches = code.match(/input\(.*?\)/g) || [];
