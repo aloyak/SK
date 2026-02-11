@@ -45,9 +45,9 @@ mid(A)
 width(A)
 ```
 
-## Resolve
+## ```Resolve``` Function
 
-* More in Variables/Symbolics
+* Only for Symbolic variables. See Variables/Symbolics
 
 ```rs
 resolve(symbolics) // returns the resolved value of a symbolic variable
