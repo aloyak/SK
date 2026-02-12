@@ -85,6 +85,8 @@ pub enum Token {
 
     Increment, // ++
     Decrement, // --
+    AdditionAssign, // +=
+    SubtractionAssign, // -=
 
     NewLine,
     EOF,
@@ -249,11 +251,13 @@ impl Lexer {
             }
             '+' => {
                 if self.match_char('+') { Ok(Some(Token::Increment)) }
+                else if self.match_char('=') { Ok(Some(Token::AdditionAssign)) }
                 else { Ok(Some(Token::Plus)) }
             },
             '-' => {
                 if self.match_char('>') { Ok(Some(Token::Arrow)) } 
                 else if self.match_char('-') { Ok(Some(Token::Decrement)) }
+                else if self.match_char('=') { Ok(Some(Token::SubtractionAssign)) }
                 else { Ok(Some(Token::Minus)) }
             }
             '.' => {

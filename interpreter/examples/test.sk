@@ -23,6 +23,10 @@ print("[-2..2] ^ 2 = " + str([-2..2] ^ 2))
 
 print(42 % 2)
 
+version += 15
+version--
+print(version) // 1 + 13 - 1
+
 panic!
 
 print("This shouldn't be printed out!")

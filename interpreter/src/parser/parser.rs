@@ -217,10 +217,41 @@ impl Parser {
             return Ok(Stmt::Block { statements: self.block()? });
         }
         
-        if self.peek_type(Token::Identifier(String::new())) && self.peek_next_type(Token::Assign) {
-            let name = self.advance().clone(); 
-            self.advance(); // consume '='
-            let value = self.expression()?;
+        if self.peek_type(Token::Identifier(String::new()))
+            && (self.peek_next_type(Token::Assign)
+                || self.peek_next_type(Token::AdditionAssign)
+                || self.peek_next_type(Token::SubtractionAssign))
+        {
+            let name = self.advance().clone();
+            let op = self.advance().clone(); // consume assignment operator
+            let rhs = self.expression()?;
+
+            let value = match op.token {
+                Token::Assign => rhs,
+                Token::AdditionAssign | Token::SubtractionAssign => {
+                    let operator = TokenSpan {
+                        token: if matches!(op.token, Token::AdditionAssign) {
+                            Token::Plus
+                        } else {
+                            Token::Minus
+                        },
+                        line: op.line,
+                        column: op.column,
+                    };
+                    Expr::Binary {
+                        left: Box::new(Expr::Variable { name: name.clone() }),
+                        operator,
+                        right: Box::new(rhs),
+                    }
+                }
+                _ => {
+                    return Err(self.report_error(
+                        op,
+                        "Unsupported assignment operator",
+                    ))
+                }
+            };
+
             self.end_stmt()?;
             return Ok(Stmt::Assign { name, value });
         }
