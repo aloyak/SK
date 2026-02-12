@@ -224,12 +224,13 @@ import "server.sk" as server
   * ```math```
   * ```rand```
   * ```os```
+  * ```fs``` (i.e. the file system library)
   * ```time```
 
 > Please consider taking a look to the docs for more information: [documentation](https://sk-lang.vercel.app/docs)
 
 ### 8. Beatiful Errors
-* This is the proposed syntax, this is yet to come!
+
 ```sh
 [Runtime Error]: Use of undefined variable 'myvar' (files/test.sk:6:8)
      |
@@ -251,6 +252,7 @@ import "server.sk" as server
   ```rs
   explain(x)
   ```
+
   * Any proposed ideas are welcome!
 
 ## VS Code Extension

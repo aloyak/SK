@@ -13,4 +13,8 @@ Includes these utilities:
 * ```os.read(id)```, returns the file contents from the file's ID
 * ```os.write(id, newContent, append?)```, writes the given content to the file, if append is enabled it will only add it to the bottom of the file
 
+* ```os.exists(path)```, returns true if the given path does exists
+* ```os.rename(path, newPath)```, changes the given path to a new one
+
+
 > Note that the File System Library doesn't work in ```safe``` mode!
