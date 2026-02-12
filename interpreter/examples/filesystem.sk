@@ -1,10 +1,21 @@
 import fs
 
-let file = fs.open("./examples/assets/myfile.txt", "rw")
-let content = fs.read(file)
-print(content)
+let path = "./examples/assets/myfile.txt"
+let checkExists = fs.exists(path)
 
-fs.write(file, "append me!", true) // true: append is enabled
-fs.close(file)
+fs.rename(path, "./examples/assets/myfile.file")
+
+if checkExists {
+    let file = fs.open(path, "rw")
+    let content = fs.read(file)
+    print(content)
+    
+    fs.write(file, "\nappend me!", true) // true: append is enabled
+    fs.close(file)
+    
+} else {
+    print("Couldn't find file at", path)
+    panic!
+}
 
 // See ./examples/assets/myfile.txt 

@@ -4,6 +4,7 @@ use crate::parser::lexer::TokenSpan;
 use crate::core::error::Error;
 use crate::core::value::{SKBool, Value};
 
+use crate::Path;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -15,11 +16,14 @@ thread_local! {
 }
 static FILE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
+// This whole library is disabled in safe mode!
 pub fn register(env: &mut Environment) {
     env.define("read".into(), Value::NativeFn(read));
     env.define("write".into(), Value::NativeFn(write));
     env.define("open".into(), Value::NativeFn(open));
     env.define("close".into(), Value::NativeFn(close));
+    env.define("exists".into(), Value::NativeFn(exists));
+    env.define("rename".into(), Value::NativeFn(rename));
 }
 
 fn ensure_unsafe(eval: &mut Evaluator, span: TokenSpan, fn_name: &str) -> Result<(), Error> {
@@ -160,4 +164,42 @@ pub fn close(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result
     })
 }
 
-// TODO: maybe delete, exists, list, rename etc...
+pub fn exists(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
+    ensure_unsafe(eval, span.clone(), "exists")?;
+
+    if _args.len() != 1 {
+        return Err(eval.error(span, "exists() expects 1 argument"));
+    }
+
+    let path = match &_args[0] {
+        Value::String(p) => p,
+        _ => return Err(eval.error(span, "exists() expects a string path")),
+    };
+
+    Ok(Value::Bool(if Path::new(path).exists() { SKBool::True } else { SKBool::False }))
+}
+
+pub fn rename(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
+    ensure_unsafe(eval, span.clone(), "rename")?;
+
+    if _args.len() != 2 {
+        return Err(eval.error(span, "rename() expects 2 arguments"));
+    }
+
+    let old_path = match &_args[0] {
+        Value::String(p) => p,
+        _ => return Err(eval.error(span, "rename() expects a string path")),
+    };
+
+    let new_path = match &_args[1] {
+        Value::String(p) => p,
+        _ => return Err(eval.error(span, "rename() expects a string path")),
+    };
+
+    std::fs::rename(old_path, new_path)
+        .map_err(|e| eval.error(span, format!("Failed to rename '{}': {}", old_path, e)))?;
+
+    Ok(Value::None)
+}
+
+// TODO: maybe delete, list etc...
