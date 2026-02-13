@@ -226,6 +226,7 @@ import "server.sk" as server
   * ```os```
   * ```fs``` (i.e. the file system library)
   * ```time```
+  * ```units``` special case, look at point 9
 
 > Please consider taking a look to the docs for more information: [documentation](https://sk-lang.vercel.app/docs)
 
@@ -238,7 +239,17 @@ import "server.sk" as server
      |       ^^^^^
 ```
 
-### 9. Proposed Ideas
+### 9. Units!
+
+Although not fully implemented, SK will support the usage of units for any variable, This does only work if imported the special ```units``` library
+
+```rs
+import units
+let velocity = [0..20] m/s
+let period = 50 s
+```
+
+### 10. Proposed Ideas
 
 * Some ideas yet to come:
 
@@ -250,7 +261,27 @@ import "server.sk" as server
 
   * The ```explain``` primitive function
   ```rs
-  explain(x)
+  let z = a + b * c
+  explain(z)
+
+  // returns
+  // z depends on:
+  // ├─ a (known: 2)
+  // └─ b * c
+  //     ├─ b (unknown)
+  //     └─ c ([1..3])
+  ```
+
+  * array type + for loops
+
+  * the match statement (like in rust)
+
+  * the ```observe``` primitive function
+  ```rs
+  let temperature = [10..15]
+  let measurement = temperature + 2
+
+  observe measurement = 15 // thus, temperature is now 13
   ```
 
   * Any proposed ideas are welcome!

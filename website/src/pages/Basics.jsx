@@ -89,7 +89,10 @@ const Basics = ({ theme }) => {
                   <span className="text-white">•</span> Special Conditionals
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
-                  <span className="text-white">•</span> Math, Random, Os and Time Libraries
+                  <span className="text-white">•</span> Math, Random, Os, FileSystem and Time Libraries
+                </li>
+                <li className="text-slate-500 text-sm font-medium flex gap-2">
+                  <span className="text-white">•</span> Support for variables with units and dimensions (not fully implemented)
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
                   <span className="text-white">•</span> REPL Interpreter
