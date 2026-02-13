@@ -1,0 +1,12 @@
+import units
+
+// Not fully implemented, this library is currently only syntax related
+
+let velocity = [0..100] m/s
+let period = 10 s
+
+let totalVelocity = 20 m/s + velocity
+
+print(totalVelocity)
+
+// returns [20..120]

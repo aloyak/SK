@@ -2,9 +2,9 @@ import time
 import os
 
 loop {
+    os.clear()
     print("Time Right Now: " + time.format(time.now()))
     print("OS:", os.name())
     
     time.sleep(1)
-    os.clear()
 }

@@ -514,6 +514,7 @@ impl Evaluator {
             }
 
             Expr::Grouping { expression } => self.eval_expr(*expression),
+            Expr::Quantity { value, .. } => self.eval_expr(*value),
             Expr::Call { callee, arguments, paren } => {
                 let callee_val = self.eval_expr(*callee)?;
 

@@ -1,5 +1,5 @@
 use crate::parser::lexer::{Token, TokenSpan};
-use crate::parser::ast::{Expr, IfPolicy, Parameter, Stmt};
+use crate::parser::ast::{Expr, IfPolicy, Parameter, Stmt, UnitExpr};
 use crate::core::error::{Error, ErrorKind, ErrorReporter};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -8,6 +8,7 @@ pub struct Parser {
     tokens: Vec<TokenSpan>,
     current: usize,
     reporter: Rc<RefCell<ErrorReporter>>,
+    allow_unit_suffix: bool,
 }
 
 impl Parser {
@@ -16,6 +17,7 @@ impl Parser {
             tokens,
             current: 0,
             reporter,
+            allow_unit_suffix: false,
         }
     }
 
@@ -97,6 +99,12 @@ impl Parser {
         match peeked {
             Token::Identifier(_) | Token::String(_) => {
                 let path = self.advance().clone();
+
+                if let Token::Identifier(name) = &path.token { // Special case for units lib
+                    if name == "units" {
+                        self.allow_unit_suffix = true;
+                    }
+                }
                 
                 let alias = if self.match_token(Token::As) {
                     Some(self.consume_identifier("Expect alias name after 'as'")?)
@@ -426,7 +434,12 @@ impl Parser {
             return Ok(Expr::Block { statements });
         }
 
-        if self.match_any(&[Token::Number(0.0), Token::String("".to_string())]) {
+        if self.match_token(Token::Number(0.0)) {
+            let expr = Expr::Literal { value: self.previous().clone() };
+            return self.maybe_unit_suffix(expr);
+        }
+
+        if self.match_token(Token::String("".to_string())) {
             return Ok(Expr::Literal { value: self.previous().clone() });
         }
 
@@ -454,10 +467,76 @@ impl Parser {
             self.consume(Token::RangeSep, "Expect '..' in interval")?;
             let max = self.expression()?;
             let bracket = self.consume(Token::RBracket, "Expect ']' after interval")?.clone();
-            return Ok(Expr::Interval { min: Box::new(min), max: Box::new(max), bracket });
+            let expr = Expr::Interval { min: Box::new(min), max: Box::new(max), bracket };
+            return self.maybe_unit_suffix(expr);
         }
 
         Err(self.report_error(self.peek().clone(), "Expect expression"))
+    }
+
+    fn maybe_unit_suffix(&mut self, expr: Expr) -> Result<Expr, Error> {
+        if !self.allow_unit_suffix {
+            return Ok(expr);
+        }
+
+        if self.peek_type(Token::Identifier("".to_string())) {
+            let unit = self.unit_expr()?;
+            Ok(Expr::Quantity {
+                value: Box::new(expr),
+                unit,
+            })
+        } else {
+            Ok(expr)
+        }
+    }
+
+    fn unit_expr(&mut self) -> Result<UnitExpr, Error> {
+        let mut expr = self.unit_primary()?;
+
+        loop {
+            if self.peek_type(Token::Star) && self.peek_next_type(Token::Identifier("".to_string())) {
+                self.advance();
+                let right = self.unit_primary()?;
+                expr = UnitExpr::Mul(Box::new(expr), Box::new(right));
+            } else if self.peek_type(Token::Slash) && self.peek_next_type(Token::Identifier("".to_string())) {
+                self.advance();
+                let right = self.unit_primary()?;
+                expr = UnitExpr::Div(Box::new(expr), Box::new(right));
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn unit_primary(&mut self) -> Result<UnitExpr, Error> {
+        let name = self.consume_identifier("Expect unit name")?;
+        let mut expr = UnitExpr::Name(name);
+
+        if self.match_token(Token::Caret) {
+            let exponent = self.consume_number("Expect integer exponent after '^'")?;
+            let exp_val = match exponent.token {
+                Token::Number(n) => n,
+                _ => {
+                    return Err(self.report_error(
+                        exponent,
+                        "Unit exponent must be a number",
+                    ))
+                }
+            };
+
+            if exp_val.fract() != 0.0 {
+                return Err(self.report_error(
+                    exponent,
+                    "Unit exponent must be an integer",
+                ));
+            }
+
+            expr = UnitExpr::Pow(Box::new(expr), exp_val as i32);
+        }
+
+        Ok(expr)
     }
 
     fn end_stmt(&mut self) -> Result<(), Error> {
@@ -532,6 +611,17 @@ impl Parser {
                 self.advance();
                 Ok(t)
             },
+            _ => Err(self.report_error(t, msg)),
+        }
+    }
+
+    fn consume_number(&mut self, msg: &str) -> Result<TokenSpan, Error> {
+        let t = self.peek().clone();
+        match t.token {
+            Token::Number(_) => {
+                self.advance();
+                Ok(t)
+            }
             _ => Err(self.report_error(t, msg)),
         }
     }

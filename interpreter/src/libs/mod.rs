@@ -3,6 +3,7 @@ pub mod os;
 pub mod fs;
 pub mod rand;
 pub mod time;
+pub mod units;
 
 use crate::evaluator::env::Environment;
 use std::collections::HashMap;
@@ -14,6 +15,9 @@ pub fn get_library_registry() -> HashMap<String, LibRegisterFn> {
     
     // Standard libraries: 
     registry.insert("math".to_string(), crate::libs::math::register);
+
+    // Units Lib as well
+    registry.insert("units".to_string(), crate::libs::units::register);
 
     registry.insert("os".to_string(), crate::libs::os::register);
     registry.insert("fs".to_string(), crate::libs::fs::register);

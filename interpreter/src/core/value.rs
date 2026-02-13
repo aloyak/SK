@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::parser::ast::{Expr, Parameter, Stmt};
+use crate::parser::ast::{Expr, Parameter, Stmt, UnitExpr};
 use crate::parser::lexer::{Token, TokenSpan};
 use crate::core::logic;
 use crate::core::error::Error;
@@ -111,7 +111,21 @@ impl Value {
                 };
                 format!("{}{}", n, op)
             }
+            Expr::Quantity { value, unit } => {
+                let val = Self::format_expr(value);
+                let unit_str = Self::format_unit_expr(unit);
+                format!("{} {}", val, unit_str)
+            }
             _ => "...".to_string(),
+        }
+    }
+
+    fn format_unit_expr(unit: &UnitExpr) -> String {
+        match unit {
+            UnitExpr::Name(name) => name.token_to_string(),
+            UnitExpr::Mul(left, right) => format!("{}*{}", Self::format_unit_expr(left), Self::format_unit_expr(right)),
+            UnitExpr::Div(left, right) => format!("{}/{}", Self::format_unit_expr(left), Self::format_unit_expr(right)),
+            UnitExpr::Pow(base, exp) => format!("{}^{}", Self::format_unit_expr(base), exp),
         }
     }
 

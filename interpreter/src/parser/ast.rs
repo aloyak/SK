@@ -49,7 +49,20 @@ pub enum Expr {
     Postfix {
         name: TokenSpan,
         operator: TokenSpan,
-    }
+    },
+
+    Quantity {
+        value: Box<Expr>,
+        unit: UnitExpr,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum UnitExpr {
+    Name(TokenSpan),
+    Mul(Box<UnitExpr>, Box<UnitExpr>),
+    Div(Box<UnitExpr>, Box<UnitExpr>),
+    Pow(Box<UnitExpr>, i32),
 }
 
 #[derive(Debug, Clone, PartialEq)]
