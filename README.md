@@ -3,9 +3,9 @@
   <h1 style="font-size: 3rem; margin-top: 10px;">The SK Programming Language</h1>
 </div>
 
-* **[SK-Lang Website](https://sk-lang.vercel.app)**
-* **[Documentation](https://sk-lang.vercel.app/docs)**
-* **[Web IDE](https://sk-lang.vercel.app/ide)**
+* **[SK-Lang Website](https://sk.aloyak.dev)**
+* **[Documentation](https://sk.aloyak.dev/docs)**
+* **[Web IDE](https://sk.aloyak.dev/ide)**
 
 * **[Crates.io](https://crates.io/crates/sk-lang)**
 
@@ -17,7 +17,7 @@ The language is designed for **safer, more honest, and analyzable computation** 
 
 ## Interpreter
 
-The final version of SK is in the works with a full scale Rust interpreter, this interpreter can run files but also features a REPL mode. For more information on the language features and installation please take a look into the [docs](https://sk-lang.vercel.app).
+The final version of SK is in the works with a full scale Rust interpreter, this interpreter can run files but also features a REPL mode. For more information on the language features and installation please take a look into the [docs](https://sk.aloyak.dev).
 
 * Install the SK interpreter by running
 
@@ -27,7 +27,7 @@ cargo install sk-lang
 
 * or download the latest binaries [here!](https://github.com/aloyak/SK/releases/latest)
 
-> Please consider taking a look to the docs here: [documentation](https://sk-lang.vercel.app/docs)
+> Please consider taking a look to the docs here: [documentation](https://sk.aloyak.dev/docs)
 
 ## Python Prototype
 
@@ -228,7 +228,7 @@ import "server.sk" as server
   * ```time```
   * ```units``` special case, look at point 9
 
-> Please consider taking a look to the docs for more information: [documentation](https://sk-lang.vercel.app/docs)
+> Please consider taking a look to the docs for more information: [documentation](https://sk.aloyak.dev/docs)
 
 ### 8. Beatiful Errors
 

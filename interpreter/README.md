@@ -8,7 +8,7 @@ SK is a high-level interpreted programming language designed to handle incomplet
 
 The language is designed for **safer, more honest, and analyzable computation** in contexts where data may be noisy, incomplete, or evolving.
 
-* **[SK-Lang Website](https://sk-lang.vercel.app)**
-* **[Documentation](https://sk-lang.vercel.app/docs)**
-* **[Web IDE](https://sk-lang.vercel.app/ide)**
+* **[SK-Lang Website](https://sk.aloyak.dev)**
+* **[Documentation](https://sk.aloyak.dev/docs)**
+* **[Web IDE](https://sk.aloyak.dev/ide)**
 * **[GitHub Repository](https://github.com/aloyak/SK)**

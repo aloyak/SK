@@ -9,4 +9,4 @@ let totalVelocity = 20 m/s + velocity
 
 print(totalVelocity)
 
-// returns [20..120]
+// returns [20..120] m/s

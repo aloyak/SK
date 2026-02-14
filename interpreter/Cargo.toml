@@ -4,7 +4,7 @@ description = "The SK Programming Language interpreter"
 version = "0.9.3"
 edition = "2024"
 repository = "https://github.com/aloyak/SK"
-homepage = "https://sk-lang.vercel.app"
+homepage = "https://sk.aloyak.dev"
 license = "MIT"
 keywords = ["programming-language"]
 
