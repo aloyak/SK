@@ -46,6 +46,7 @@ print("Rate this language from " + str(variable) + "!")
   const [outputWidth, setOutputWidth] = useState(900);
   const [isInitialized, setIsInitialized] = useState(false);
   const [command, setCommand] = useState('SK --version');
+  const lastSharedCodeRef = useRef(null);
   
   const isResizing = useRef(false);
   const fileInputRef = useRef(null);
@@ -58,6 +59,37 @@ print("Rate this language from " + str(variable) + "!")
   const setPage = (nextPage) => {
     const target = `/${nextPage}`;
     if (location.pathname !== target) navigate(target);
+  };
+
+  const decodeBase64 = (value) => {
+    try {
+      const binary = atob(value);
+      const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (err) {
+      return null;
+    }
+  };
+
+  const getSharedCodeFromLocation = (search) => {
+    if (!search) return null;
+    const params = new URLSearchParams(search);
+    const codeParam = params.get('code');
+    const code64Param = params.get('code64');
+
+    if (code64Param) {
+      return decodeBase64(code64Param);
+    }
+
+    if (codeParam) {
+      try {
+        return decodeURIComponent(codeParam);
+      } catch (err) {
+        return codeParam;
+      }
+    }
+
+    return null;
   };
 
   useEffect(() => {
@@ -78,6 +110,15 @@ print("Rate this language from " + str(variable) + "!")
       if (!isInitialized) setOutput('Loading interpreter...');
     }
   }, [currentPage, isInitialized]);
+
+  useEffect(() => {
+    if (currentPage !== 'ide') return;
+    const sharedCode = getSharedCodeFromLocation(location.search);
+    if (!sharedCode || sharedCode === lastSharedCodeRef.current) return;
+    setCode(sharedCode);
+    setOutput('Run the code to see the output');
+    lastSharedCodeRef.current = sharedCode;
+  }, [currentPage, location.search]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {

@@ -15,7 +15,7 @@ const Header = ({ currentPage, onRun, onDownload, onUpload, setPage, theme }) =>
         <img src="../../assets/skicon2.png" alt="SK Logo" className="w-12 h-12 object-contain" />
         {currentPage === 'ide' && (
           <span className="text-sm text-slate-800 mt-2 font-black tracking-[0.3em] animate-in fade-in duration-300">
-            IDE v1.0.2
+            IDE v1.0.3
           </span>
         )}
       </div>
