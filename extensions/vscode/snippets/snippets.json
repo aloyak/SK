@@ -34,5 +34,14 @@
       "}"
     ],
     "description": "Create an infinite loop"
+  },
+  "For Loop": {
+    "prefix": "for",
+    "body": [
+      "for ${1:var} in ${2:iterable} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a for loop"
   }
 }

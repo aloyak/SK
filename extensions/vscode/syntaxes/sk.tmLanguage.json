@@ -18,7 +18,7 @@
       "patterns": [
         {
           "name": "keyword.control.sk",
-          "match": "\\b(if|elif|else|fn|let|const|symbolic|quiet|unknown|import|as|pub|loop)\\b"
+          "match": "\\b(if|elif|else|fn|let|const|symbolic|quiet|unknown|import|as|pub|loop|for|in)\\b"
         },
         {
           "name": "support.function.builtin.sk",
