@@ -482,6 +482,52 @@ impl Evaluator {
                 Ok(updated)
             }
 
+            Expr::Array { elements, bracket: _ } => {
+                let mut values = Vec::new();
+                for elem in elements {
+                    values.push(self.eval_expr(elem)?);
+                }
+                Ok(Value::Array(values))
+            }
+
+            Expr::Index { object, index, bracket } => {
+                let arr = self.eval_expr(*object)?;
+                let idx = self.eval_expr(*index)?;
+
+                match (arr, idx) {
+                    (Value::Array(items), Value::Number(n)) => {
+                        let i = n as usize;
+                        if i < items.len() {
+                            Ok(items[i].clone())
+                        } else {
+                            Err(self.report_error(bracket, "Array index out of bounds"))
+                        }
+                    }
+                    (Value::Array(items), Value::Interval(min, max)) => {
+                        let min_idx = (min as usize).min(items.len());
+                        let max_idx = (max as usize).min(items.len());
+
+                        if min_idx >= max_idx {
+                            return Ok(Value::Array(Vec::new()));
+                        }
+
+                        if min < 0.0 || max >= items.len() as f64 {
+                            return Err(self.report_error(
+                                bracket,
+                                format!(
+                                    "Interval index [{}..{}] out of bounds for array of length {}",
+                                    min as i32, max as i32, items.len()
+                                ),
+                            ));
+                        }
+
+                        let slice = items[min_idx..=max_idx].to_vec();
+                        Ok(Value::Array(slice))
+                    }
+                    _ => Err(self.report_error(bracket, "Can only index arrays with numbers"))
+                }
+            }
+
             Expr::Interval { min, max, bracket } => {
                 let low = self.eval_expr(*min)?;
                 let high = self.eval_expr(*max)?;
@@ -516,63 +562,69 @@ impl Evaluator {
             Expr::Grouping { expression } => self.eval_expr(*expression),
             Expr::Quantity { value, .. } => self.eval_expr(*value),
             Expr::Call { callee, arguments, paren } => {
-                let callee_val = self.eval_expr(*callee)?;
+                if let Expr::Get { object, name } = callee.as_ref() {
+                    let mut obj = self.eval_expr(*object.clone())?;
+                    let method_name = match &name.token {
+                        Token::Identifier(n) => n,
+                        _ => return Err(self.report_error(name.clone(), "Expected method name")),
+                    };
 
-                let mut eval_args = Vec::new();
-                for arg in &arguments {
-                    eval_args.push(self.eval_expr(arg.clone())?);
-                }
+                    let result = match method_name.as_str() {
+                        "len" => {
+                            if !arguments.is_empty() {
+                                return Err(self.report_error(paren, "len() takes no arguments"));
+                            }
+                            obj.len()
+                                .map_err(|e| self.report_error(name.clone(), e.message))
+                        }
+                        "push" => {
+                            if arguments.is_empty() {
+                                return Err(self.report_error(paren, "push() requires at least one argument"));
+                            }
+                            for arg in arguments {
+                                let val = self.eval_expr(arg)?;
+                                obj.push(val)
+                                    .map_err(|e| self.report_error(name.clone(), e.message))?;
+                            }
+                            Ok(obj.clone())
+                        }
+                        "pop" => {
+                            if !arguments.is_empty() {
+                                return Err(self.report_error(paren, "pop() takes no arguments"));
+                            }
+                            obj.pop()
+                                .map_err(|e| self.report_error(name.clone(), e.message))
+                        }
+                        "reverse" => {
+                            if !arguments.is_empty() {
+                                return Err(self.report_error(paren, "reverse() takes no arguments"));
+                            }
+                            obj.reverse()
+                                .map_err(|e| self.report_error(name.clone(), e.message))?;
+                            Ok(obj.clone())
+                        }
+                        _ => {
+                            let callee_val = self.eval_expr(*callee.clone())?;
+                            return self.call_function(callee_val, arguments, paren);
+                        }
+                    };
 
-                match callee_val {
-                    Value::NativeFn(func) => {
-                        match func(eval_args, paren.clone(), self) {
-                            Ok(v) => Ok(v),
-                            Err(mut e) => {
-                                if matches!(e.token.token, Token::Unknown) {
-                                    e.token = paren;
-                                }
-                                Err(e)
+                    if let Expr::Variable { name: var_name } = object.as_ref() {
+                        let final_result = result?;
+                        if method_name == "push" || method_name == "reverse" {
+                            if let Token::Identifier(n) = &var_name.token {
+                                self.env.borrow_mut().assign(n, final_result.clone())
+                                    .map_err(|msg| self.report_error(var_name.clone(), msg))?;
                             }
                         }
-                    },
-                    Value::Function(func) => {
-                        let mut call_env = Environment::new_enclosed(func.closure.clone());
-
-                        for (i, param) in func.params.iter().enumerate() {
-                            let value = if i < eval_args.len() {
-                                eval_args[i].clone()
-                            } else if let Some(default_expr) = &param.default {
-                                self.eval_expr(default_expr.clone())?
-                            } else {
-                                return Err(self.report_error(
-                                    paren.clone(),
-                                    format!(
-                                        "Missing required argument '{}'",
-                                        param.name.token_to_string()
-                                    ),
-                                ));
-                            };
-
-                            call_env.define(param.name.token_to_string(), value);
-                        }
-
-                        if eval_args.len() > func.params.len() {
-                            return Err(self.report_error(
-                                paren,
-                                format!(
-                                    "Expected at most {} args, got {}",
-                                    func.params.len(),
-                                    eval_args.len()
-                                ),
-                            ));
-                        }
-
-                        self.execute_block(func.body.clone(), call_env)
+                        Ok(final_result)
+                    } else {
+                        result
                     }
-                    _ => Err(self.report_error(
-                        paren,
-                        format!("Value '{}' is not callable", callee_val),
-                    )),
+                } else {
+                    // Basic function call
+                    let callee_val = self.eval_expr(*callee)?;
+                    self.call_function(callee_val, arguments, paren)
                 }
             }
 
@@ -759,5 +811,64 @@ impl Evaluator {
 
     fn report_error(&self, token: TokenSpan, msg: impl Into<String>) -> Error {
         self.error(token, msg)
+    }
+
+    fn call_function(&mut self, callee_val: Value, arguments: Vec<Expr>, paren: TokenSpan) -> Result<Value, Error> {
+        let mut eval_args = Vec::new();
+        for arg in &arguments {
+            eval_args.push(self.eval_expr(arg.clone())?);
+        }
+
+        match callee_val {
+            Value::NativeFn(func) => {
+                match func(eval_args, paren.clone(), self) {
+                    Ok(v) => Ok(v),
+                    Err(mut e) => {
+                        if matches!(e.token.token, Token::Unknown) {
+                            e.token = paren;
+                        }
+                        Err(e)
+                    }
+                }
+            },
+            Value::Function(func) => {
+                let mut call_env = Environment::new_enclosed(func.closure.clone());
+
+                for (i, param) in func.params.iter().enumerate() {
+                    let value = if i < eval_args.len() {
+                        eval_args[i].clone()
+                    } else if let Some(default_expr) = &param.default {
+                        self.eval_expr(default_expr.clone())?
+                    } else {
+                        return Err(self.report_error(
+                            paren.clone(),
+                            format!(
+                                "Missing required argument '{}'",
+                                param.name.token_to_string()
+                            ),
+                        ));
+                    };
+
+                    call_env.define(param.name.token_to_string(), value);
+                }
+
+                if eval_args.len() > func.params.len() {
+                    return Err(self.report_error(
+                        paren,
+                        format!(
+                            "Expected at most {} args, got {}",
+                            func.params.len(),
+                            eval_args.len()
+                        ),
+                    ));
+                }
+
+                self.execute_block(func.body.clone(), call_env)
+            }
+            _ => Err(self.report_error(
+                paren,
+                format!("Value '{}' is not callable", callee_val),
+            )),
+        }
     }
 }

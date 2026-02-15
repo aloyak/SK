@@ -30,6 +30,7 @@ pub enum Value {
     Number(f64),
     String(String),
     Bool(SKBool),
+    Array(Vec<Value>),
     Interval(f64, f64),
     Unknown,
     Symbolic {
@@ -48,6 +49,7 @@ impl PartialEq for Value {
             (Value::Number(a), Value::Number(b)) => a == b,
             (Value::String(a), Value::String(b)) => a == b,
             (Value::Bool(a), Value::Bool(b)) => a == b,
+            (Value::Array(a), Value::Array(b)) => a == b,
             (Value::Interval(a_min, a_max), Value::Interval(b_min, b_max)) => a_min == b_min && a_max == b_max,
             (Value::Unknown, Value::Unknown) => true,
             (Value::Symbolic { expression: e1, is_quiet: q1 }, Value::Symbolic { expression: e2, is_quiet: q2 }) => e1 == e2 && q1 == q2,
@@ -60,6 +62,43 @@ impl PartialEq for Value {
 impl Value {
     pub fn is_symbolic_or_unknown(&self) -> bool {
         matches!(self, Value::Symbolic { .. } | Value::Unknown)
+    }
+
+    pub fn len(&self) -> Result<Value, Error> {
+        match self {
+            Value::Array(items) => Ok(Value::Number(items.len() as f64)),
+            Value::String(s) => Ok(Value::Number(s.len() as f64)),
+            _ => Err(Self::err("len() only works on arrays and strings".to_string()))
+        }
+    }
+
+    pub fn push(&mut self, item: Value) -> Result<(), Error> {
+        match self {
+            Value::Array(items) => {
+                items.push(item);
+                Ok(())
+            }
+            _ => Err(Self::err("push() only works on arrays".to_string()))
+        }
+    }
+
+    pub fn pop(&mut self) -> Result<Value, Error> {
+        match self {
+            Value::Array(items) => {
+                items.pop().ok_or_else(|| Self::err("Cannot pop from empty array".to_string()))
+            }
+            _ => Err(Self::err("pop() only works on arrays".to_string()))
+        }
+    }
+
+    pub fn reverse(&mut self) -> Result<(), Error> {
+        match self {
+            Value::Array(items) => {
+                items.reverse();
+                Ok(())
+            }
+            _ => Err(Self::err("reverse() only works on arrays".to_string()))
+        }
     }
 
     fn format_expr(expr: &Expr) -> String {
@@ -353,6 +392,13 @@ impl fmt::Display for Value {
             Value::NativeFn(_) => write!(f, "<native fn>"),
             Value::Function(_) => write!(f, "<function>"),
             Value::Module(_) => write!(f, "<module>"),
+            Value::Array(items) => {
+                let formatted = items.iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(f, "[{}]", formatted)
+            }
             Value::None => write!(f, "none"),
         }
     }

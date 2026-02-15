@@ -389,6 +389,15 @@ impl Parser {
             } else if self.match_token(Token::Dot) {
                 let name = self.consume_identifier("Expect property name after '.'")?;
                 expr = Expr::Get { object: Box::new(expr), name };
+            } else if self.match_token(Token::LBracket) {
+                let index = self.expression()?;
+                let bracket = self.consume(Token::RBracket, "Expect ']' after index")?.clone();
+                
+                expr = Expr::Index { 
+                    object: Box::new(expr),
+                    index: Box::new(index),
+                    bracket,
+                }
             } else if self.match_any(&[Token::Increment, Token::Decrement]) {
                 let operator = self.previous().clone();
                 return match expr {
@@ -463,12 +472,38 @@ impl Parser {
         }
 
         if self.match_token(Token::LBracket) {
-            let min = self.expression()?;
-            self.consume(Token::RangeSep, "Expect '..' in interval")?;
-            let max = self.expression()?;
-            let bracket = self.consume(Token::RBracket, "Expect ']' after interval")?.clone();
-            let expr = Expr::Interval { min: Box::new(min), max: Box::new(max), bracket };
-            return self.maybe_unit_suffix(expr);
+            let bracket_start = self.previous().clone();
+            
+            if self.check(&Token::RBracket) {
+                self.advance();
+                return Ok(Expr::Array { elements: Vec::new(), bracket: bracket_start });
+            }
+
+            let first = self.expression()?;
+
+            if self.match_token(Token::RangeSep) {
+                let max = self.expression()?;
+                let bracket = self.consume(Token::RBracket, "Expect ']' after interval")?.clone();
+                let expr = Expr::Interval { 
+                    min: Box::new(first), 
+                    max: Box::new(max), 
+                    bracket 
+                };
+                return self.maybe_unit_suffix(expr);
+            } else {
+                let mut elements = vec![first];
+                
+                while self.match_token(Token::Comma) {
+
+                    if self.check(&Token::RBracket) {
+                        break;
+                    }
+                    elements.push(self.expression()?);
+                }
+
+                let bracket = self.consume(Token::RBracket, "Expect ']' after array")?.clone();
+                return Ok(Expr::Array { elements, bracket });
+            }
         }
 
         Err(self.report_error(self.peek().clone(), "Expect expression"))

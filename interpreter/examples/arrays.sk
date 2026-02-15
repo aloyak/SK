@@ -1,0 +1,20 @@
+let arr = [0, 2, "Hello!", 6, 8]
+print(kind(arr))
+
+print("first:", arr[0], "last:", arr[4])
+print("length:", arr.len()) // 5
+
+arr.push(10)
+print(arr) // [0, 2, 4, 6, 8, 10]
+
+let last = arr.pop()
+print(last) // 10
+
+arr.reverse()
+print(arr)
+
+let slice = arr[[0..2]]
+print(slice) // [10, 8, 6]
+
+// len() does also work for strings
+"Hello, World!".len()

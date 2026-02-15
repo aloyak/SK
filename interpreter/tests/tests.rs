@@ -144,6 +144,31 @@ fn evals_intervals() {
 }
 
 #[test]
+fn evals_arrays() {
+    let mut interpreter = SKInterpreter::new();
+    let result1 = interpreter
+        .execute_string("let arr = [1, 2, 3]\narr[1]".to_string())
+        .expect("execution should succeed");
+
+    let result2 = interpreter
+        .execute_string("let arr = [10, 20, 30]\narr.len()".to_string())
+        .expect("execution should succeed");
+
+    let result3 = interpreter
+        .execute_string("let arr = [5, 10, 15]\narr.push(20)\narr[3]".to_string())
+        .expect("execution should succeed");    
+
+    let result4 = interpreter
+        .execute_string("let arr = []\narr.len()".to_string())
+        .expect("execution should succeed");
+
+    assert_eq!(result1, Value::Number(2.0));
+    assert_eq!(result2, Value::Number(3.0));
+    assert_eq!(result3, Value::Number(20.0));
+    assert_eq!(result4, Value::Number(0.0));
+}
+
+#[test]
 fn library_import() {
     let mut interpreter = SKInterpreter::new();
     let result = interpreter

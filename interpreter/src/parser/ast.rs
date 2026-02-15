@@ -55,6 +55,16 @@ pub enum Expr {
         value: Box<Expr>,
         unit: UnitExpr,
     },
+
+    Array {
+        elements: Vec<Expr>,
+        bracket: TokenSpan,
+    },
+    Index {
+        object: Box<Expr>,
+        index: Box<Expr>,
+        bracket: TokenSpan,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
