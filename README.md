@@ -1,6 +1,6 @@
 <div align="center">
   <img src="skicon.png" alt="SK Logo" width="160" height="160"> 
-  <h1 style="font-size: 3rem; margin-top: 10px;">The SK Programming Language</h1>
+  <h1 style="font-size: 3rem; margin-top: 10px;"><strong>The SK Programming Language</strong></h1>
 </div>
 
 * **[SK-Lang Website](https://sk.aloyak.dev)**
@@ -206,7 +206,19 @@ loop {
     n = n - 1
 }
 ```
+
 * The ```loop``` statement includes the ```break``` and ```continue``` keywords
+
+```rs
+let map = [[0,0,0], [0,0,0], [0,0,0]]
+for row in map {
+    print(row)
+}
+// Same as:
+for i in [0..map.len()-1] { // Uses an interval as a range
+    print(map[i])
+}
+```
 
 ### 7. Imports & Libraries
 
@@ -272,9 +284,7 @@ let period = 50 s
   //     └─ c ([1..3])
   ```
 
-  * array type + for loops
-
-  * the match statement (like in rust)
+  * the match statement (like in rust!)
 
   * the ```observe``` primitive function
   ```rs

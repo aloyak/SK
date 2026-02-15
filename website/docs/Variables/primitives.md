@@ -16,7 +16,7 @@ let unk = unknown // can also be defined with this
 
 let boolean = partial // booleans can be true, false and partial (uncertain condition)
 
-let arr = [1, 2, 3, 4]
+let arr = [1, 2, 3, 4] 
 ```
 
 * Note that intervals may support non-numeric variables in the future, like: ```let interval = ["low".."high"]```
@@ -54,6 +54,12 @@ arr.pop() // Removes the last element
 arr.reverse() // [4, 3, 2, 1]
 ```
 
+It is allowed to use different type variables inside arrays, including arrays themselves
+
+```rs
+let arr = [-21, "Hello!", [-1..1], true, [6, 7, 8]]
+```
+
 ### Increment and Decrement Operators
 
 Just like in C++ you can use the Increment and Decrement Operators
@@ -64,7 +70,7 @@ let n = 23
 n++ // 24
 n-- // 23
 
-// Same as
-n = n + 1
-n = n - 1
+// Also works:
+n += 1
+n -= 1
 ```
