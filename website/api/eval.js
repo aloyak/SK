@@ -31,7 +31,10 @@ export default async function handler(req, res) {
       const tempFile = path.join('/tmp', `code-${Date.now()}.sk`);
       fs.writeFileSync(tempFile, code);
 
-      const child = spawn(activePath, [tempFile, '--safe']);
+      const child = spawn('bash', [
+        '-c',
+        `ulimit -v 524288 && "${activePath}" "${tempFile}" --safe`
+      ]);
       let output = '';
       let error = '';
 

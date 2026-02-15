@@ -21,26 +21,27 @@ function AppRoutes({ theme }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [code, setCode] = useState(
-    '// The SK Programming Language\n' + 
-    '\n' +
-    'print("Hello, World!")\n' +
-    '\n' +
-    'fn fibonacci(n, previous = 0, current = 1) {\n' +
-    '    if n > 0 {\n' +
-    '        print(current)\n' +
-    '        fibonacci(n - 1, current, previous + current)\n' +
-    '    }\n' + 
-    '}\n' +
-    '\n' +
-    'fibonacci(10)\n' +
-    '\n' +
-    'let variable = [0..10] // partially known variable\n' +
-    'print("Rate this language from " + str(variable) + "!")\n' +
-    '\n' +
-    '// Find many more examples to try at: \n' +
-    '// https://github.com/aloyak/SK/tree/main/interpreter/examples\n'
-  );
+  const defaultCode = `// The SK Programming Language
+
+print("Hello, World!")
+
+fn fibonacci(n, previous = 0, current = 1) {
+    if n > 0 {
+        print(current)
+        fibonacci(n - 1, current, previous + current)
+    }
+}
+
+fibonacci(10)
+
+let variable = [0..10] // partially known variable
+print("Rate this language from " + str(variable) + "!")
+
+// Find many more examples to try at: 
+// https://github.com/aloyak/SK/tree/main/interpreter/examples
+`;
+
+  const [code, setCode] = useState(defaultCode);
   const [output, setOutput] = useState('Run the code to see the output');
   const [outputWidth, setOutputWidth] = useState(900);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -93,7 +94,7 @@ function AppRoutes({ theme }) {
     monaco.languages.setMonarchTokensProvider('sk', {
       tokenizer: {
         root: [
-          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|break|continue|merge|panic|strict)\b/, 'keyword'],
+          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|for|in|break|continue|merge|panic|strict)\b/, 'keyword'],
           [/\b(certain|possible|impossible|known)\b/, 'builtins'],
           [/panic!/, 'builtins'],
           [/\b(print|input|str|num|kind|resolve)\b/, 'builtins'],
