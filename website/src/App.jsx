@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
+import Popup from './components/Popup';
 import IDE from './pages/IDE';
 import About from './pages/About';
 import Docs from './pages/Docs';
@@ -46,6 +47,9 @@ print("Rate this language from " + str(variable) + "!")
   const [outputWidth, setOutputWidth] = useState(900);
   const [isInitialized, setIsInitialized] = useState(false);
   const [command, setCommand] = useState('SK --version');
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
   const lastSharedCodeRef = useRef(null);
   
   const isResizing = useRef(false);
@@ -223,10 +227,37 @@ print("Rate this language from " + str(variable) + "!")
     }
   };
 
+  const handleShare = () => {
+    const code64 = btoa(new TextEncoder().encode(code).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+    const url = `${window.location.origin}/ide?code64=${encodeURIComponent(code64)}`;
+    setShareUrl(url);
+    setShareMessage('Share this link to open the code in the IDE.');
+    setIsShareOpen(true);
+  };
+
+  const handleCopyShare = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage('Copied to clipboard.');
+    } catch (err) {
+      setShareMessage('Copy failed. You can manually copy the link below.');
+    }
+  };
+
   return (
     <div className={`h-screen flex flex-col ${t.bg} font-sans p-10 select-none`}>
       <input type="file" ref={fileInputRef} onChange={handleUpload} className="hidden" accept=".sk" />
-      <Header currentPage={currentPage} onRun={handleRun} onDownload={handleDownload} onUpload={handleUpload} setPage={setPage} theme={t} />
+      <Header currentPage={currentPage} onRun={handleRun} onShare={handleShare} onDownload={handleDownload} onUpload={handleUpload} setPage={setPage} theme={t} />
+      {isShareOpen && (
+        <Popup
+          message={shareMessage}
+          code={shareUrl}
+          onCopy={handleCopyShare}
+          copyLabel="Copy link"
+          onClose={() => setIsShareOpen(false)}
+        />
+      )}
       <Routes>
         <Route path="/about" element={<About theme={t} setPage={setPage} />} />
         <Route path="/ide" element={<IDE {...{code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme: t}} />} />

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Play, Download, Upload } from 'lucide-react';
+import { Play, Share2, Download, Upload } from 'lucide-react';
 
-const Header = ({ currentPage, onRun, onDownload, onUpload, setPage, theme }) => {
+const Header = ({ currentPage, onRun, onShare, onDownload, onUpload, setPage, theme }) => {
   const getNavLinkClass = (pageName) => {
     const base = "transition hover:text-white cursor-pointer";
     const active = "text-white";
@@ -15,7 +15,7 @@ const Header = ({ currentPage, onRun, onDownload, onUpload, setPage, theme }) =>
         <img src="../../assets/skicon2.png" alt="SK Logo" className="w-12 h-12 object-contain" />
         {currentPage === 'ide' && (
           <span className="text-sm text-slate-800 mt-2 font-black tracking-[0.3em] animate-in fade-in duration-300">
-            IDE v1.0.3
+            IDE v1.0.4
           </span>
         )}
       </div>
@@ -32,6 +32,9 @@ const Header = ({ currentPage, onRun, onDownload, onUpload, setPage, theme }) =>
           <div className="flex items-center gap-6 animate-in slide-in-from-right-4 duration-300">
             <button onClick={onRun} className={`${theme.buttonHover} cursor-pointer`}>
               <Play size={32} strokeWidth={2} />
+            </button>
+            <button onClick={onShare} className={`${theme.buttonHover} cursor-pointer`}>
+              <Share2 size={32} strokeWidth={2} />
             </button>
             <button onClick={onDownload} className={`${theme.buttonHover} cursor-pointer`}>
               <Download size={32} strokeWidth={2} />

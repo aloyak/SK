@@ -7,6 +7,31 @@ html, body, #root {
   overflow: hidden;
 }
 
+.popup-backdrop {
+  backdrop-filter: blur(6px);
+  animation: popup-fade 160ms ease-out;
+}
+
+@keyframes popup-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popup-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* Markdown Content Styling */
 .markdown-content h1 {
   color: #ffffff;
