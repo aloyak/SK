@@ -1,12 +1,17 @@
 import units
 
-// Not fully implemented, this library is currently only syntax related
+let distance = [15..20]m
+let time = 5s
 
-let velocity = [0..100] m/s
-let period = 10 s
+print(kind(time))
+print(distance / time) // [3..4] m/s
 
-let totalVelocity = 20 m/s + velocity
 
-print(totalVelocity)
+units.define("mph", 0.44704 m/s) // Defined mph as 0.45 m/s
+print(10 mph) // returns 4.4704 m/s
 
-// returns [20..120] m/s
+
+print(10 mph + 10 m/s) // Totally allowed!
+print(5m * 3m^2) // Area to volume
+
+// print(10m + 2s) // You can't do this!

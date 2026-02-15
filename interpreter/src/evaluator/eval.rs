@@ -1,7 +1,8 @@
-use crate::parser::ast::{Expr, IfPolicy, Stmt};
+use crate::parser::ast::{Expr, IfPolicy, Stmt, UnitExpr};
 use crate::parser::lexer::{Token, TokenSpan};
 use crate::core::value::{Function, SKBool, Value};
 use crate::core::logic;
+use crate::core::units::Unit;
 use crate::core::error::{Error, ErrorReporter};
 use crate::evaluator::env::Environment;
 use std::rc::Rc;
@@ -612,13 +613,32 @@ impl Evaluator {
                 let val = self.eval_expr(*right)?;
                 match (operator.token.clone(), val) {
                     (Token::Minus, Value::Number(n)) => Ok(Value::Number(-n)),
+                    (Token::Minus, Value::Quantity { value, unit }) => {
+                        let negated = Value::Number(0.0).sub(value.as_ref())
+                            .map_err(|e| self.report_error(operator.clone(), e.message))?;
+                        Ok(Value::Quantity { value: Box::new(negated), unit })
+                    }
                     (Token::Bang, Value::Bool(b)) => Ok(Value::Bool(logic::not(b))),
                     _ => Err(self.report_error(operator, "Invalid unary operation")),
                 }
             }
 
             Expr::Grouping { expression } => self.eval_expr(*expression),
-            Expr::Quantity { value, .. } => self.eval_expr(*value),
+            Expr::Quantity { value, unit } => {
+                let inner = self.eval_expr(*value)?;
+                let (parsed_unit, scale) = self.eval_unit_value(&unit)?;
+                let scaled_inner = if scale == 1.0 {
+                    inner
+                } else {
+                    inner
+                        .mul(&Value::Number(scale))
+                        .map_err(|e| self.report_error(self.unit_token(&unit), e.message))?
+                };
+                Ok(Value::Quantity {
+                    value: Box::new(scaled_inner),
+                    unit: parsed_unit,
+                })
+            }
             Expr::Call { callee, arguments, paren } => {
                 if let Expr::Get { object, name } = callee.as_ref() {
                     let mut obj = self.eval_expr(*object.clone())?;
@@ -773,6 +793,61 @@ impl Evaluator {
             Ok(val) => Ok(val),
             Err(_) if is_symbolic => self.propagate_symbolic(left, op, right),
             Err(msg) => Err(self.report_error(op, msg)),
+        }
+    }
+
+    fn eval_unit_value(&self, unit: &UnitExpr) -> Result<(Unit, f64), Error> {
+        match unit {
+            UnitExpr::Name(name) => {
+                let unit_name = name.token_to_string();
+                if let Ok(value) = self.env.borrow().get(&unit_name) {
+                    return self.unit_from_value(value, name.clone());
+                }
+
+                if let Ok(Value::Module(units_mod)) = self.env.borrow().get("units") {
+                    if let Ok(value) = units_mod.borrow().get(&unit_name) {
+                        return self.unit_from_value(value, name.clone());
+                    }
+                }
+
+                Err(self.report_error(
+                    name.clone(),
+                    format!("Undefined unit '{}'", unit_name),
+                ))
+            }
+            UnitExpr::Mul(left, right) => {
+                let (l_unit, l_scale) = self.eval_unit_value(left)?;
+                let (r_unit, r_scale) = self.eval_unit_value(right)?;
+                Ok((l_unit.mul(&r_unit), l_scale * r_scale))
+            }
+            UnitExpr::Div(left, right) => {
+                let (l_unit, l_scale) = self.eval_unit_value(left)?;
+                let (r_unit, r_scale) = self.eval_unit_value(right)?;
+                Ok((l_unit.div(&r_unit), l_scale / r_scale))
+            }
+            UnitExpr::Pow(base, exp) => {
+                let (base_unit, base_scale) = self.eval_unit_value(base)?;
+                Ok((base_unit.pow(*exp), base_scale.powi(*exp)))
+            }
+        }
+    }
+
+    fn unit_from_value(&self, value: Value, name: TokenSpan) -> Result<(Unit, f64), Error> {
+        match value {
+            Value::Quantity { value, unit } => match value.as_ref() {
+                Value::Number(n) => Ok((unit, *n)),
+                _ => Err(self.report_error(name, "Unit definitions must be numeric")),
+            },
+            _ => Err(self.report_error(name, "Unit definitions must be quantities")),
+        }
+    }
+
+    fn unit_token(&self, unit: &UnitExpr) -> TokenSpan {
+        match unit {
+            UnitExpr::Name(name) => name.clone(),
+            UnitExpr::Mul(left, _) => self.unit_token(left),
+            UnitExpr::Div(left, _) => self.unit_token(left),
+            UnitExpr::Pow(base, _) => self.unit_token(base),
         }
     }
 

@@ -95,6 +95,7 @@ pub fn kind(args: Vec<Value>, _span: TokenSpan, _: &mut Evaluator) -> Result<Val
         Some(Value::Interval(..)) => "interval",
         Some(Value::Array(..)) => "array",
         Some(Value::Unknown) => "unknown",
+        Some(Value::Quantity { .. }) => "quantity",
         Some(Value::Symbolic { is_quiet: true, .. }) => "quiet",
         Some(Value::Symbolic { .. }) => "symbolic",
         Some(Value::NativeFn(_)) => "native function",

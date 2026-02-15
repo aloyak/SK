@@ -2,6 +2,7 @@ use core::fmt;
 use crate::parser::ast::{Expr, Parameter, Stmt, UnitExpr};
 use crate::parser::lexer::{Token, TokenSpan};
 use crate::core::logic;
+use crate::core::units::Unit;
 use crate::core::error::Error;
 
 use crate::evaluator::env::Environment;
@@ -28,6 +29,7 @@ pub struct Function {
 #[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
+    Quantity { value: Box<Value>, unit: Unit },
     String(String),
     Bool(SKBool),
     Array(Vec<Value>),
@@ -47,6 +49,7 @@ impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Value::Number(a), Value::Number(b)) => a == b,
+            (Value::Quantity { value: a, unit: u1 }, Value::Quantity { value: b, unit: u2 }) => a == b && u1 == u2,
             (Value::String(a), Value::String(b)) => a == b,
             (Value::Bool(a), Value::Bool(b)) => a == b,
             (Value::Array(a), Value::Array(b)) => a == b,
@@ -181,6 +184,16 @@ impl Value {
 
     pub fn add(&self, other: &Value) -> Result<Value, Error> {
         match (self, other) {
+            (Value::Quantity { value: a, unit: u1 }, Value::Quantity { value: b, unit: u2 }) => {
+                if u1 != u2 {
+                    return Err(Self::err("Unit mismatch in addition".to_string()));
+                }
+                let inner = a.as_ref().add(b.as_ref())?;
+                Ok(Value::Quantity { value: Box::new(inner), unit: u1.clone() })
+            }
+            (Value::Quantity { .. }, _) | (_, Value::Quantity { .. }) => {
+                Err(Self::err("Cannot add a unit value to a non-unit value".to_string()))
+            }
             (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a + b)),
             (Value::String(s1), Value::String(s2)) => Ok(Value::String(format!("{}{}", s1, s2))),
 
@@ -197,6 +210,16 @@ impl Value {
 
     pub fn sub(&self, other: &Value) -> Result<Value, Error> {
         match (self, other) {
+            (Value::Quantity { value: a, unit: u1 }, Value::Quantity { value: b, unit: u2 }) => {
+                if u1 != u2 {
+                    return Err(Self::err("Unit mismatch in subtraction".to_string()));
+                }
+                let inner = a.as_ref().sub(b.as_ref())?;
+                Ok(Value::Quantity { value: Box::new(inner), unit: u1.clone() })
+            }
+            (Value::Quantity { .. }, _) | (_, Value::Quantity { .. }) => {
+                Err(Self::err("Cannot subtract a unit value and a non-unit value".to_string()))
+            }
             (l, r) if l == r && !l.is_symbolic_or_unknown() => Ok(Value::Number(0.0)),
             (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a - b)),
 
@@ -213,6 +236,18 @@ impl Value {
 
     pub fn mul(&self, other: &Value) -> Result<Value, Error> {
         match (self, other) {
+            (Value::Quantity { value: a, unit: u1 }, Value::Quantity { value: b, unit: u2 }) => {
+                let inner = a.as_ref().mul(b.as_ref())?;
+                Ok(Value::Quantity { value: Box::new(inner), unit: u1.mul(u2) })
+            }
+            (Value::Quantity { value, unit }, Value::Number(_)) => {
+                let inner = value.as_ref().mul(other)?;
+                Ok(Value::Quantity { value: Box::new(inner), unit: unit.clone() })
+            }
+            (Value::Number(_), Value::Quantity { value, unit }) => {
+                let inner = self.mul(value.as_ref())?;
+                Ok(Value::Quantity { value: Box::new(inner), unit: unit.clone() })
+            }
             (Value::Number(n), _) | (_, Value::Number(n)) if *n == 0.0 => Ok(Value::Number(0.0)),
             (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a * b)),
 
@@ -237,6 +272,22 @@ impl Value {
     pub fn div(&self, other: &Value) -> Result<Value, Error> {
         if let (Value::Unknown, _) | (_, Value::Unknown) = (self, other) {
             return Ok(Value::Unknown);
+        }
+
+        match (self, other) {
+            (Value::Quantity { value: a, unit: u1 }, Value::Quantity { value: b, unit: u2 }) => {
+                let inner = a.as_ref().div(b.as_ref())?;
+                return Ok(Value::Quantity { value: Box::new(inner), unit: u1.div(u2) });
+            }
+            (Value::Quantity { value, unit }, Value::Number(_)) => {
+                let inner = value.as_ref().div(other)?;
+                return Ok(Value::Quantity { value: Box::new(inner), unit: unit.clone() });
+            }
+            (Value::Number(_), Value::Quantity { value, unit }) => {
+                let inner = self.div(value.as_ref())?;
+                return Ok(Value::Quantity { value: Box::new(inner), unit: Unit::dimensionless().div(unit) });
+            }
+            _ => {}
         }
 
         if self == other {
@@ -296,6 +347,19 @@ impl Value {
 
     pub fn pow(&self, other: &Value) -> Result<Value, Error> {
         match (self, other) {
+            (Value::Quantity { value, unit }, Value::Number(n)) => {
+                if n.fract() != 0.0 {
+                    return Err(Self::err("Unit exponent must be an integer".to_string()));
+                }
+                let inner = value.as_ref().pow(other)?;
+                Ok(Value::Quantity { value: Box::new(inner), unit: unit.pow(*n as i32) })
+            }
+            (Value::Quantity { .. }, _) => {
+                Err(Self::err("Exponent must be a number for unit values".to_string()))
+            }
+            (Value::Number(_), Value::Quantity { .. }) => {
+                Err(Self::err("Unit exponents are not supported".to_string()))
+            }
             (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a.powf(*b))),
 
             (Value::Interval(min, max), Value::Number(n)) => {
@@ -314,6 +378,16 @@ impl Value {
 
     pub fn modulo(&self, other: &Value) -> Result<Value, Error> {
         match (self, other) {
+            (Value::Quantity { value: a, unit: u1 }, Value::Quantity { value: b, unit: u2 }) => {
+                if u1 != u2 {
+                    return Err(Self::err("Unit mismatch in modulo".to_string()));
+                }
+                let inner = a.as_ref().modulo(b.as_ref())?;
+                Ok(Value::Quantity { value: Box::new(inner), unit: u1.clone() })
+            }
+            (Value::Quantity { .. }, _) | (_, Value::Quantity { .. }) => {
+                Err(Self::err("Modulo requires both values to have the same unit".to_string()))
+            }
             (Value::Number(a), Value::Number(b)) => {
                 if *b == 0.0 {
                     return Err(Self::err("Modulo by zero!".to_string()));
@@ -326,6 +400,15 @@ impl Value {
 
     pub fn compare(&self, other: &Value, op: &Token) -> Result<Value, Error> {
         match (self, other) {
+            (Value::Quantity { value: a, unit: u1 }, Value::Quantity { value: b, unit: u2 }) => {
+                if u1 != u2 {
+                    return Err(Self::err("Unit mismatch in comparison".to_string()));
+                }
+                a.as_ref().compare(b.as_ref(), op)
+            }
+            (Value::Quantity { .. }, _) | (_, Value::Quantity { .. }) => {
+                Err(Self::err("Cannot compare a unit value with a non-unit value".to_string()))
+            }
             (Value::Number(a), Value::Number(b)) => {
                 let op_str = match op {
                     Token::EqualEqual => "==",
@@ -382,6 +465,13 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Value::Number(n) => write!(f, "{}", n),
+            Value::Quantity { value, unit } => {
+                if unit.is_dimensionless() {
+                    write!(f, "{}", value)
+                } else {
+                    write!(f, "{} {}", value, unit)
+                }
+            }
             Value::String(s) => write!(f, "{}", s),
             Value::Bool(SKBool::True) => write!(f, "true"),
             Value::Bool(SKBool::False) => write!(f, "false"),
