@@ -52,3 +52,14 @@ width(A)
 ```rs
 resolve(symbolics) // returns the resolved value of a symbolic variable
 ```
+
+## Array Functions
+
+* See Variables/Primitives
+
+```rs
+arr.len() 
+arr.push() 
+arr.pop()
+arr.reverse()
+```

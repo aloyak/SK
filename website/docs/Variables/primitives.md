@@ -15,6 +15,8 @@ unknown unk // unknown value, good for initialization
 let unk = unknown // can also be defined with this
 
 let boolean = partial // booleans can be true, false and partial (uncertain condition)
+
+let arr = [1, 2, 3, 4]
 ```
 
 * Note that intervals may support non-numeric variables in the future, like: ```let interval = ["low".."high"]```
@@ -37,6 +39,19 @@ Strings support concatenation using the '+' operator
 ```rs
 let name = "John SK"
 print("Hello, " + name + "!")
+```
+
+### Array Type
+
+They array type also includes these built-in functions
+
+```rs
+let arr = [1, 2, 3, 4]
+
+arr.len() // 4
+arr.push(5) // Adds '5' at the end
+arr.pop() // Removes the last element
+arr.reverse() // [4, 3, 2, 1]
 ```
 
 ### Increment and Decrement Operators
