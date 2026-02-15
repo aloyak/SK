@@ -2,7 +2,7 @@
 
 ## Interval Operators
 
-* **IMPORTANT**: These functions were moved to the math library, see Imports/Math for more information!
+* **IMPORTANT**: These functions were moved to the math library, see Libraries/Math for more information!
 
 SK includes basic functions to work with partially known variables (i.e. intervals)
 

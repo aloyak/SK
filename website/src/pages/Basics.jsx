@@ -92,7 +92,7 @@ const Basics = ({ theme }) => {
                   <span className="text-white">•</span> Math, Random, Os, FileSystem and Time Libraries
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
-                  <span className="text-white">•</span> Support for variables with units and dimensions (not fully implemented)
+                  <span className="text-white">•</span> Support for Variables with Units and Dimensions
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
                   <span className="text-white">•</span> REPL Interpreter
@@ -102,6 +102,9 @@ const Basics = ({ theme }) => {
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
                   <span className="text-white">•</span> Web IDE & Documentation
+                </li>
+                <li className="text-slate-500 text-sm font-medium flex gap-2">
+                  <span className="text-white">•</span> Planned: FFI
                 </li>
               </ul>
             </div>

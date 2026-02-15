@@ -74,3 +74,15 @@ n-- // 23
 n += 1
 n -= 1
 ```
+
+### Units Library
+
+SK supports working with units, and define your own, by using the special unit library, for more information please go to Libraries/Units
+
+```rs
+import units
+let area = 2 m^2
+let height = 3 m
+
+let volume = area * height // returns 6 m^3
+```

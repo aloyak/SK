@@ -4,11 +4,12 @@
 
 Currently SK includes these built-in libraries
 
-* The ```Math``` Library: See Imports/Math
-* The ```Time``` Library: See Imports/Time
-* The ```Os``` Library: See Imports/Os
-* The ```Rand``` Library: See Imports/Rand
-* The ```Fs``` Library: See Imports/Fs
+* The ```Math``` Library: See Libraries/Math
+* The ```Time``` Library: See Libraries/Time
+* The ```Os``` Library: See Libraries/Os
+* The ```Rand``` Library: See Libraries/Rand
+* The ```Fs``` Library: See Libraries/Fs
+* The ```Units``` Library: See Libraries/Units
 
 > More will be possibly added in the future
 
