@@ -130,6 +130,11 @@ pub enum Stmt {
     Loop {
         body: Vec<Stmt>,
     },
+    For {
+        variable: TokenSpan,
+        iterable: Expr,
+        body: Vec<Stmt>,
+    },
     Break,
     Continue,
 }

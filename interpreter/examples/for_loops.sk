@@ -1,0 +1,21 @@
+let arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+let even = []
+let odd = []
+
+for value in arr {
+    if value % 2 == 0 {
+        even.push(value)
+    }
+}
+
+// Same but without explicit value iteration
+
+for i in [0..(arr.len() - 1)] { // Uses an interval as a range
+    if arr[i] % 2 != 0 {
+        odd.push(arr[i])
+    }
+}
+
+print("Even:", even)
+print("Odd:", odd)

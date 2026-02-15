@@ -40,6 +40,8 @@ pub enum Token {
     Loop,
     Break,
     Continue,
+    For,
+    In,
 
     // Operators & Symbols
     Assign,
@@ -347,6 +349,8 @@ impl Lexer {
             "loop" => Token::Loop,
             "break" => Token::Break,
             "continue" => Token::Continue,
+            "for" => Token::For,
+            "in" => Token::In,
             "none" => Token::None,
             "kind" => Token::Kind,
             "true" => Token::True,

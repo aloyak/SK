@@ -287,6 +287,64 @@ impl Evaluator {
                     }
                 }
             }
+            Stmt::For { variable, iterable, body } => {
+                let iterable_val = self.eval_expr(iterable)?;
+                
+                let items = match iterable_val {
+                    Value::Array(arr) => arr,
+                    Value::Interval(min, max) => {
+                        let mut arr = Vec::new();
+                        let mut current = min.ceil();
+                        while current <= max {
+                            arr.push(Value::Number(current));
+                            current += 1.0;
+                        }
+                        arr
+                    }
+                    _ => {
+                        return Err(self.report_error(
+                            variable,
+                            "For loop requires an array or interval to iterate".to_string(),
+                        ));
+                    }
+                };
+
+                let var_name = variable.token_to_string();
+
+                for item in items {
+                    self.control_flow = ControlFlow::None;
+                    let mut new_env = Environment::new_enclosed(self.env.clone());
+                    new_env.define(var_name.clone(), item);
+
+                    let previous = self.env.clone();
+                    self.env = Rc::new(RefCell::new(new_env));
+
+                    for stmt in body.clone() {
+                        if let Err(e) = self.eval_stmt(stmt) {
+                            self.env = previous.clone();
+                            return Err(e);
+                        }
+
+                        if self.control_flow == ControlFlow::Break {
+                            self.control_flow = ControlFlow::None;
+                            self.env = previous.clone();
+                            return Ok(Value::None);
+                        }
+
+                        if self.control_flow == ControlFlow::Continue {
+                            break;
+                        }
+                    }
+
+                    self.env = previous;
+
+                    if self.control_flow == ControlFlow::Continue {
+                        self.control_flow = ControlFlow::None;
+                    }
+                }
+
+                Ok(Value::None)
+            }
             Stmt::Break => {
                 self.control_flow = ControlFlow::Break;
                 Ok(Value::None)

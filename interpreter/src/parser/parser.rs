@@ -79,6 +79,10 @@ impl Parser {
                 self.advance();
                 self.loop_statement()
             }
+            Token::For => {
+                self.advance();
+                self.for_statement()
+            }
             Token::Break => {
                 self.advance();
                 self.end_stmt()?;
@@ -127,6 +131,18 @@ impl Parser {
         
         let body = self.block()?;
         Ok(Stmt::Loop { body })
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt, Error> {
+        let variable = self.consume_identifier("Expect variable name after 'for'")?;
+        self.consume(Token::In, "Expect 'in' after for variable")?;
+        let iterable = self.expression()?;
+        
+        self.skip_newlines();
+        self.consume(Token::LBrace, "Expect '{' before for loop body")?;
+        
+        let body = self.block()?;
+        Ok(Stmt::For { variable, iterable, body })
     }
 
     fn function_declaration(&mut self, is_public: bool) -> Result<Stmt, Error> {
