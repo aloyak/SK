@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, Box, ExternalLink, Copy, Check } from 'lucide-react';
+import { Terminal, Box, ExternalLink, Copy, Check, GitCompare } from 'lucide-react';
 
 const features = [
   { 
@@ -108,6 +108,14 @@ const Basics = ({ theme }) => {
                 </li>
               </ul>
             </div>
+             <button 
+              onClick={() => window.open('https://github.com/aloyak/SK/commits/main/', '_blank')}
+              className="cursor-pointer opacity-60 w-full flex items-center justify-center gap-3 px-6 py-4 bg-white text-black rounded-xl font-bold hover:bg-slate-200 transition-colors"
+            >
+              <GitCompare size={20} />
+              <span>Changelog</span>
+              <ExternalLink size={16} />
+            </button>
           </div>
         </div>
 

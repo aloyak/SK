@@ -9,6 +9,8 @@ The SK includes many built-in functions,
 print(x) // print a new line
 print(1, 2, 3) // returns "1 2 3"
 
+write(x) // prints in the same line
+
 let result = input("Optional Message: ")
 
 // variable built-ins, see more in Variables/Primitives
