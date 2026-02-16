@@ -102,8 +102,17 @@
     },
 
     "comment": {
-      "name": "comment.line.sk",
-      "match": "//.*$"
+      "patterns": [
+        {
+          "name": "comment.block.sk",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.line.sk",
+          "match": "//.*$"
+        }
+      ]
     },
 
     "variable": {
