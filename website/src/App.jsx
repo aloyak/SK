@@ -138,16 +138,23 @@ print("Rate this language from " + str(variable) + "!")
     monaco.languages.register({ id: 'sk' });
     monaco.languages.setMonarchTokensProvider('sk', {
       tokenizer: {
-        root: [
-          [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|for|in|break|continue|merge|panic|strict)\b/, 'keyword'],
-          [/\b(certain|possible|impossible|known)\b/, 'builtins'],
-          [/panic!/, 'builtins'],
-          [/\b(print|input|str|num|kind|resolve)\b/, 'builtins'],
-          [/\b(true|false|partial)\b/, 'booleans'],
-          [/\/\/.*$/, 'comment'],
-          [/"[^"]*"/, 'string'],
-          [/\d+/, 'number'],
-        ]
+      root: [
+        [/\/\*/, { token: 'comment', next: '@comment' }],
+        [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|for|in|break|continue|merge|panic|strict)\b/, 'keyword'],
+        [/\b(certain|possible|impossible|known)\b/, 'builtins'],
+        [/panic!/, 'builtins'],
+        [/\b(print|write|input|str|num|kind|resolve)\b/, 'builtins'],
+        [/\b(true|false|partial)\b/, 'booleans'],
+        [/\/\/.*$/, 'comment'],
+        [/"[^"]*"/, 'string'],
+        [/\d+/, 'number'],
+      ],
+      comment: [
+        [/[^*/]+/, 'comment'],
+        [/\/\*/, { token: 'comment', next: '@push' }],
+        [/\*\//, { token: 'comment', next: '@pop' }],
+        [/[*/]/, 'comment']
+      ]
       }
     });
     monaco.editor.defineTheme('sk-theme', {
