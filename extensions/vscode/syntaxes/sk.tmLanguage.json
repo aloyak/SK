@@ -22,7 +22,7 @@
         },
         {
           "name": "support.function.builtin.sk",
-          "match": "\\b(print|input|panic!|continue|break)\\b"
+          "match": "\\b(print|input|panic!|continue|break|write)\\b"
         },
 		{
           "name": "keyword.operator.sk",
