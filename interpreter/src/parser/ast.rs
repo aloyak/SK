@@ -98,10 +98,6 @@ pub enum Stmt {
         is_quiet: bool,
     },
 
-    Print {
-        expression: Expr,
-    },
-
     Panic,
     
     Expression {

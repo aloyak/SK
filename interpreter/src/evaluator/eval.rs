@@ -225,11 +225,6 @@ impl Evaluator {
                 }
                 Ok(Value::None)
             }
-            Stmt::Print { expression } => { // Helper function to display values, not the built-in print()
-                let val = self.eval_expr(expression)?;
-                println!("{}", val);
-                Ok(Value::None)
-            }
             Stmt::Panic => Err(self.report_error(
                 TokenSpan {
                     token: Token::Panic,
@@ -460,15 +455,6 @@ impl Evaluator {
             Expr::Variable { name } => {
                 let name_str = match &name.token {
                     Token::Identifier(n) => n,
-                    Token::Print => "print",
-                    Token::Input => "input",
-                    Token::Kind => "kind",
-                    Token::Certain => "certain",
-                    Token::Known => "known",
-                    Token::Possible => "possible",
-                    Token::Impossible => "impossible",
-                    Token::Str => "str",
-                    Token::Num => "num",
                     _ => return Err(self.report_error(name, "Expected identifier")),
                 };
                 let value = self

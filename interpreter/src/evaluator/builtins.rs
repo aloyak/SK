@@ -12,6 +12,13 @@ pub fn print(args: Vec<Value>, _span: TokenSpan, _: &mut Evaluator) -> Result<Va
     Ok(Value::None)
 }
 
+pub fn write(args: Vec<Value>, _span: TokenSpan, _: &mut Evaluator) -> Result<Value, Error> {
+    for arg in args {
+        print!("{} ", arg);
+    }
+    Ok(Value::None)
+}
+
 pub fn resolve(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
     match args.first() {
         Some(Value::Symbolic { expression, .. }) => {

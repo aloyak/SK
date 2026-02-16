@@ -17,8 +17,9 @@ impl Environment {
             enclosing: None,
         };
 
-        let defs: [(&str, crate::core::value::NativeFn); 14] = [
+        let defs: [(&str, crate::core::value::NativeFn); 15] = [
             ("print", builtins::print),
+            ("write", builtins::write),
             ("input", builtins::input),
             ("num", builtins::num),
             ("str", builtins::str),

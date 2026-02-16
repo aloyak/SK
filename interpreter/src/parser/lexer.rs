@@ -16,7 +16,6 @@ pub enum Token {
 
     // Keywords
     Let,
-    Const,
     Unknown,
     Symbolic,
     Quiet,
@@ -27,13 +26,8 @@ pub enum Token {
     Merge,
     Strict,
     None,
-    Print,
-    Input,
-    Str,
-    Num,
     Panic,
     Function,
-    Kind,
     Comma,
     Dot,
 
@@ -61,7 +55,6 @@ pub enum Token {
     RBracket,
     LBrace,
     RBrace,
-    Quote,
 
     Greater,
     GreaterEqual,
@@ -75,11 +68,6 @@ pub enum Token {
     Or,
     Bang,
 
-    // Knowledge Operators
-    Possible,
-    Impossible,
-    Certain,
-    Known,
 
     True,
     False,
@@ -331,7 +319,6 @@ impl Lexer {
             "import" => Token::Import,
             "as" => Token::As,
             "let" => Token::Let,
-            "const" => Token::Const,
             "unknown" => Token::Unknown,
             "symbolic" => Token::Symbolic,
             "quiet" => Token::Quiet,
@@ -343,8 +330,6 @@ impl Lexer {
             "strict" => Token::Strict,
             "panic!" => Token::Panic, // The statement
             "panic" => Token::Panic,  // The policy
-            "print" => Token::Print,
-            "input" => Token::Input,
             "fn" => Token::Function,
             "loop" => Token::Loop,
             "break" => Token::Break,
@@ -352,14 +337,9 @@ impl Lexer {
             "for" => Token::For,
             "in" => Token::In,
             "none" => Token::None,
-            "kind" => Token::Kind,
             "true" => Token::True,
             "false" => Token::False,
             "partial" => Token::Partial,
-            "possible" => Token::Possible,
-            "impossible" => Token::Impossible,
-            "certain" => Token::Certain,
-            "known" => Token::Known,
             _ => Token::Identifier(text),
         }
     }
