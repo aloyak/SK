@@ -3,6 +3,12 @@
 
 // SK Programming Language
 
+/*
+THIS IS A LARGE COMMENT
+IT SUPPORT MULTI-LINE TEXT
+IT IS OMITED BY THE INTERPRETER
+*/
+
 unknown myvar // same as let myvar = unknown
 let number = 67
 let version = 1.0

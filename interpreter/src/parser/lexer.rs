@@ -68,7 +68,6 @@ pub enum Token {
     Or,
     Bang,
 
-
     True,
     False,
     Partial,
@@ -208,15 +207,30 @@ impl Lexer {
             '%' => Ok(Some(Token::Modulo)),
             '^' => Ok(Some(Token::Caret)),
 
-            '/' => {
-                if self.match_char('/') {
+            '/' => match self.peek() {
+                '/' => {
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();
                     }
                     Ok(None)
-                } else {
-                    Ok(Some(Token::Slash))
                 }
+                '*' => {
+                    self.advance();
+                    while !(self.peek() == '*' && self.peek_next() == '/') {
+                        if self.is_at_end() {
+                            return Err(self.error_at(start_line, start_column, "Unterminated block comment"));
+                        }
+                        if self.peek() == '\n' {
+                            self.line += 1;
+                            self.column = 1;
+                        }
+                        self.advance();
+                    }
+                    self.advance();
+                    self.advance(); 
+                    Ok(None)
+                }
+                _ => Ok(Some(Token::Slash)),
             }
 
             '\n' => {
