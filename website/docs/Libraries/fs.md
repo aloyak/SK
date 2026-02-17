@@ -16,5 +16,7 @@ Includes these utilities:
 * ```os.exists(path)```, returns true if the given path does exists
 * ```os.rename(path, newPath)```, changes the given path to a new one
 
+* ```os.list(path)``` returns a list of the files and dirs inside that path
+
 
 > Note that the File System Library doesn't work in ```safe``` mode!

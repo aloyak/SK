@@ -32,15 +32,20 @@ pub fn now(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<V
 
 pub fn format(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
     use chrono::{DateTime, Utc};
-    // YYYY-MM-DD: HH:MM:SS
     match args.first() {
         Some(Value::Number(n)) => {
+            let format_str = match args.get(1) {
+                Some(Value::String(s)) => s.as_str(),
+                None => "%Y-%m-%d: %H:%M:%S",
+                _ => return Err(eval.error(span, "format() expects optional string as second argument")),
+            };
             let dt = DateTime::<Utc>::from(UNIX_EPOCH + std::time::Duration::from_secs_f64(*n));
-            Ok(Value::String(dt.format("%Y-%m-%d: %H:%M:%S").to_string()))
+            Ok(Value::String(dt.format(format_str).to_string()))
         }
-        _ => Err(eval.error(span, "format() expects 1 number")),
+        _ => Err(eval.error(span, "format() expects at least 1 argument")),
     }
 }
+
 
 // In Seconds
 pub fn sleep(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {

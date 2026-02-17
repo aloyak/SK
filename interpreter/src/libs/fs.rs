@@ -24,6 +24,7 @@ pub fn register(env: &mut Environment) {
     env.define("close".into(), Value::NativeFn(close));
     env.define("exists".into(), Value::NativeFn(exists));
     env.define("rename".into(), Value::NativeFn(rename));
+    env.define("list".into(), Value::NativeFn(list));
 }
 
 fn ensure_unsafe(eval: &mut Evaluator, span: TokenSpan, fn_name: &str) -> Result<(), Error> {
@@ -202,4 +203,26 @@ pub fn rename(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Resul
     Ok(Value::None)
 }
 
-// TODO: maybe delete, list etc...
+pub fn list(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
+    ensure_unsafe(eval, span.clone(), "list")?;
+
+    if _args.len() != 1 {
+        return Err(eval.error(span, "list() expects 1 argument"));
+    }
+
+    let mut entries = Vec::new();
+    let path = match &_args[0] {
+        Value::String(p) => p,
+        _ => return Err(eval.error(span, "list() expects a string path")),
+    };
+
+    for entry in std::fs::read_dir(path)
+        .map_err(|e| eval.error(span.clone(), format!("Failed to read directory '{}': {}", path, e)))?
+    {
+        let entry = entry
+            .map_err(|e| eval.error(span.clone(), format!("Failed to read directory entry: {}", e)))?;
+        entries.push(Value::String(entry.file_name().to_string_lossy().into()));
+    }
+
+    Ok(Value::Array(entries))
+}
