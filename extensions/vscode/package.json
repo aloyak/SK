@@ -3,12 +3,13 @@
   "displayName": "SK-Lang",
   "description": "The SK Programming Language VSCode Extension!",
   "version": "0.5.7",
+  "publisher": "aloyak",
   "repository": {
     "type": "git",
     "url": "https://github.com/aloyak/SK"
   },
   "engines": {
-    "vscode": "^1.108.1"
+    "vscode": "^1.104.1"
   },
   "categories": [
     "Programming Languages"
