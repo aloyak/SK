@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { Plus, Minus } from 'lucide-react';
 
@@ -56,7 +56,7 @@ const parseAnsi = (text) => {
 
 const IDE = ({ code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme }) => {
   const outputText = typeof output === 'string' ? output : String(output ?? '');
-  const outputSegments = parseAnsi(outputText);
+  const outputSegments = useMemo(() => parseAnsi(outputText), [outputText]);
   const [fontSize, setFontSize] = useState(24);
   const minFontSize = 16;
   const maxFontSize = 40;

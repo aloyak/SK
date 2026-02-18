@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Popup from './components/Popup';
@@ -51,6 +51,8 @@ print("Rate this language from " + str(variable) + "!")
   const [shareUrl, setShareUrl] = useState('');
   const [shareMessage, setShareMessage] = useState('');
   const lastSharedCodeRef = useRef(null);
+  const codeRef = useRef(defaultCode);
+  const monacoSetupRef = useRef(false);
   
   const isResizing = useRef(false);
   const fileInputRef = useRef(null);
@@ -125,6 +127,10 @@ print("Rate this language from " + str(variable) + "!")
   }, [currentPage, location.search]);
 
   useEffect(() => {
+    codeRef.current = code;
+  }, [code]);
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       if (e.key === 's') { e.preventDefault(); handleDownload(); }
@@ -132,9 +138,11 @@ print("Rate this language from " + str(variable) + "!")
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [code]);
+  }, []);
 
-  const handleEditorWillMount = (monaco) => {
+  const handleEditorWillMount = useCallback((monaco) => {
+    if (monacoSetupRef.current) return;
+    monacoSetupRef.current = true;
     monaco.languages.register({ id: 'sk' });
     monaco.languages.setMonarchTokensProvider('sk', {
       tokenizer: {
@@ -170,7 +178,7 @@ print("Rate this language from " + str(variable) + "!")
       ],
       colors: { 'editor.background': '#0a0a0f', 'editor.lineHighlightBackground': '#1e1e2e10' }
     });
-  };
+  }, []);
 
   const startResizing = () => {
     isResizing.current = true;
@@ -189,7 +197,7 @@ print("Rate this language from " + str(variable) + "!")
   };
 
   const handleDownload = () => {
-    const blob = new Blob([code], { type: 'text/plain' });
+    const blob = new Blob([codeRef.current], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = Object.assign(document.createElement("a"), { href: url, download: "main.sk" });
     link.click();
