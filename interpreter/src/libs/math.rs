@@ -31,6 +31,8 @@ pub fn register(env: &mut Environment) {
     env.define("E".into(), Value::Number(std::f64::consts::E));
 
     env.define("truncate".into(), Value::NativeFn(truncate));
+    env.define("floor".into(), Value::NativeFn(floor));
+    env.define("round".into(), Value::NativeFn(round));
 
     // Interval Operators moved here
     env.define("width".into(), Value::NativeFn(width));
@@ -182,6 +184,22 @@ pub fn truncate(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Resu
             Ok(Value::Number((n * factor).trunc() / factor))
         }
         _ => Err(eval.error(span, "truncate() expects only numbers")),
+    }
+}
+
+pub fn floor(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
+    match args.first() {
+        Some(Value::Number(n)) => Ok(Value::Number(n.floor())),
+        _ =>
+            Err(eval.error(span, "floor() expects 1 number")),
+    }
+}
+
+pub fn round(args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
+    match args.first() {
+        Some(Value::Number(n)) => Ok(Value::Number(n.round())),
+        _ =>
+            Err(eval.error(span, "round() expects 1 number")),
     }
 }
 
