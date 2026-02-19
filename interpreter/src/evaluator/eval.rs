@@ -381,8 +381,14 @@ impl Evaluator {
             SKBool::Partial => match policy {
                 IfPolicy::Strict => self.eval_next_in_chain(remaining_elifs, &None, policy),
                 IfPolicy::Panic => {
-                    eprintln!("Program panicked! Uncertain condition with panic policy");
-                    std::process::exit(1);
+                    return Err(self.report_error(
+                        TokenSpan {
+                            token: Token::Unknown,
+                            line: 0,
+                            column: 0,
+                        },
+                        "Program panicked!"
+                    ));
                 }
                 IfPolicy::Merge => {
                     let val_true = self.eval_stmt(body)?;

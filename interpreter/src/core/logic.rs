@@ -60,13 +60,13 @@ pub fn compare_intervals(min1: f64, max1: f64, min2: f64, max2: f64, op: &str) -
             else { SKBool::Partial }
         }
         "==" => {
-            if min1 == max1 && min2 == max2 && min1 == min2 { SKBool::True }
+            if min1 == min2 && max1 == max2 { SKBool::True }
             else if max1 < min2 || min1 > max2 { SKBool::False }
             else { SKBool::Partial }
         }
         "!=" => {
-            if max1 < min2 || min1 > max2 { SKBool::True }
-            else if min1 == max1 && min2 == max2 && min1 == min2 { SKBool::False }
+            if min1 == min2 && max1 == max2 { SKBool::False }
+            else if max1 < min2 || min1 > max2 { SKBool::True }
             else { SKBool::Partial }
         }
         _ => SKBool::Partial,
