@@ -2,7 +2,7 @@
 
 ## The ```math``` library
 
-```rs
+```py
 import math
 ```
 

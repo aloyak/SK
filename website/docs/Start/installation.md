@@ -8,6 +8,8 @@ There are two main ways to install the SK interpreter, either from github releas
 
 ### Option A **(recommended)**: install from crates.io, check the website [here!](https://crates.io/crates/sk-lang)
 
+> Note that this option will isntall not install the latest github release but the current version at crates.io (which is most of the time an older version!)
+
 ```sh
 $ cargo install sk-lang
 ```

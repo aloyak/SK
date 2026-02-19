@@ -9,12 +9,11 @@ Currently SK includes these built-in libraries
 * The ```Os``` Library: See Libraries/Os
 * The ```Rand``` Library: See Libraries/Rand
 * The ```Fs``` Library: See Libraries/Fs
+* The ```String``` Library: See Libraries/String
 * The ```Units``` Library: See Libraries/Units
 
-> More will be possibly added in the future
+> More will be possibly added in the future!
 
-### TODO:
-
-Any ideas are welcome!
-
-* ```server*```
+Ideas:
+* ```http``` (on the works)
+* ```json```

@@ -2,7 +2,7 @@
 
 ## The ```os``` library
 
-```rs
+```py
 import os
 ```
 

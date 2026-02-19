@@ -2,7 +2,7 @@
 
 ## The ```rand``` library
 
-```rs
+```py
 import rand
 ```
 

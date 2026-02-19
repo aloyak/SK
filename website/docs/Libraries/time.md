@@ -2,7 +2,7 @@
 
 ## The ```time``` library
 
-```rs
+```py
 import time
 ```
 
@@ -17,4 +17,4 @@ Basic time library that includes some simple debugging functions too!
 The time library includes a timer! This creates a new thread that counts the time in seconds till the timer is stopped or the program is terminated.
 
 * ```time.startTimer()``` returns the timer ID, starting from 0
-* ```time.stopTimer(ID)``` returns the timer elapsed time since start in seconds, requieres the timer's ido
+* ```time.stopTimer(ID)``` returns the timer elapsed time since start in seconds, requieres the timer's id

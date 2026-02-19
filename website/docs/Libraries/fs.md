@@ -2,7 +2,7 @@
 
 ## The ```fs``` library
 
-```rs
+```py
 import fs
 ```
 
