@@ -1,9 +1,16 @@
 import string as str
 
-let text = "The Quick Brown Fox Jumps Over The Lazy Dog!"
+let text = "¡Hello Flavortown!"
 
-print(str.trim("\n\n" + text + "\n"))
-print(str.toUpper(text))
-print(str.toLower(text))
-print(str.replace(text, "!", "?"))
-print(str.split(text))
+text = str.trim(text)
+text = str.toUpper(text)
+text = str.replace(text, "", " ")
+text = str.split(text)
+
+for i in [0..text.len() - 1] {
+    for k in [0..i] {
+        write(".")
+    }
+    print(text[i])
+}
+
