@@ -445,6 +445,30 @@ impl Value {
             (Value::Number(n), Value::Interval(min, max)) => 
                 Value::Interval(*n, *n).compare(&Value::Interval(*min, *max), op),
 
+            (Value::Bool(b1), Value::Bool(b2)) => match op {
+                Token::EqualEqual => Ok(Value::Bool(if b1 == b2 { SKBool::True } else { SKBool::False })),
+                Token::BangEqual => Ok(Value::Bool(if b1 != b2 { SKBool::True } else { SKBool::False })),
+                _ => Err(Self::err("Invalid comparison for booleans".to_string())),
+            },
+
+            (Value::Array(a1), Value::Array(a2)) => match op {
+                Token::EqualEqual => Ok(Value::Bool(if a1 == a2 { SKBool::True } else { SKBool::False })),
+                Token::BangEqual => Ok(Value::Bool(if a1 != a2 { SKBool::True } else { SKBool::False })),
+                _ => Err(Self::err("Invalid comparison for arrays".to_string())),
+            },
+
+            (Value::None, Value::None) => match op {
+                Token::EqualEqual => Ok(Value::Bool(SKBool::True)),
+                Token::BangEqual => Ok(Value::Bool(SKBool::False)),
+                _ => Ok(Value::Bool(SKBool::Partial)),
+            },
+
+            (Value::Symbolic { expression: e1, is_quiet: q1 }, Value::Symbolic { expression: e2, is_quiet: q2 }) => match op {
+                Token::EqualEqual => Ok(Value::Bool(if e1 == e2 && q1 == q2 { SKBool::True } else { SKBool::False })),
+                Token::BangEqual => Ok(Value::Bool(if e1 != e2 || q1 != q2 { SKBool::True } else { SKBool::False })),
+                _ => Ok(Value::Bool(SKBool::Partial)),
+            },
+
             _ => Ok(Value::Bool(SKBool::Partial)),
         }
     }
