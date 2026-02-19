@@ -1,0 +1,9 @@
+import string as str
+
+let text = "The Quick Brown Fox Jumps Over The Lazy Dog!"
+
+print(str.trim("\n\n" + text + "\n"))
+print(str.toUpper(text))
+print(str.toLower(text))
+print(str.replace(text, "!", "?"))
+print(str.split(text))

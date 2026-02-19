@@ -35,7 +35,7 @@ fn ensure_unsafe(eval: &mut Evaluator, span: TokenSpan, fn_name: &str) -> Result
 }
 
 pub fn read(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
-    ensure_unsafe(eval, span.clone(), "read")?;
+    ensure_unsafe(eval, span.clone(), "fs.read")?;
 
     if _args.len() != 1 {
         return Err(eval.error(span, "read() expects 1 argument"));
@@ -60,7 +60,7 @@ pub fn read(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<
 
 // Supports Appending too!
 pub fn write(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
-    ensure_unsafe(eval, span.clone(), "write")?;
+    ensure_unsafe(eval, span.clone(), "fs.write")?;
 
     if _args.len() < 2 || _args.len() > 3 {
         return Err(eval.error(span, "write() expects 2 or 3 arguments"));
@@ -98,7 +98,7 @@ pub fn write(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result
 }
 
 pub fn open(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
-    ensure_unsafe(eval, span.clone(), "open")?;
+    ensure_unsafe(eval, span.clone(), "fs.open")?;
 
     if _args.is_empty() || _args.len() > 2 {
         return Err(eval.error(span, "open() expects 1 or 2 arguments"));
@@ -145,7 +145,7 @@ pub fn open(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<
 }
 
 pub fn close(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
-    ensure_unsafe(eval, span.clone(), "close")?;
+    ensure_unsafe(eval, span.clone(), "fs.close")?;
 
     if _args.len() != 1 {
         return Err(eval.error(span, "close() expects 1 argument"));
@@ -166,7 +166,7 @@ pub fn close(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result
 }
 
 pub fn exists(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
-    ensure_unsafe(eval, span.clone(), "exists")?;
+    ensure_unsafe(eval, span.clone(), "fs.exists")?;
 
     if _args.len() != 1 {
         return Err(eval.error(span, "exists() expects 1 argument"));
@@ -181,7 +181,7 @@ pub fn exists(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Resul
 }
 
 pub fn rename(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
-    ensure_unsafe(eval, span.clone(), "rename")?;
+    ensure_unsafe(eval, span.clone(), "fs.rename")?;
 
     if _args.len() != 2 {
         return Err(eval.error(span, "rename() expects 2 arguments"));
@@ -204,7 +204,7 @@ pub fn rename(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Resul
 }
 
 pub fn list(_args: Vec<Value>, span: TokenSpan, eval: &mut Evaluator) -> Result<Value, Error> {
-    ensure_unsafe(eval, span.clone(), "list")?;
+    ensure_unsafe(eval, span.clone(), "fs.list")?;
 
     if _args.len() != 1 {
         return Err(eval.error(span, "list() expects 1 argument"));
