@@ -3,7 +3,7 @@
   <h1 style="font-size: 3rem; margin-top: 10px;"><strong>The SK Programming Language</strong></h1>
 </div>
 
-* **[SK-Lang Website](https://sk.aloyak.dev)**
+* **[Website](https://sk.aloyak.dev)**
 * **[Documentation](https://sk.aloyak.dev/docs)**
 * **[Web IDE](https://sk.aloyak.dev/ide)**
 
@@ -55,6 +55,7 @@ SK supports several kinds of values:
 let number = 3
 let string = "hello!"
 let boolean = true
+let arr = [1, 2, 3]
 ```
 
 * **Intervals** – ranges of possible numeric values:
@@ -74,15 +75,13 @@ let x = unknown
 * **Symbolic values** – formulas that may depend on unknowns or intervals:
 
 ```rs
-symbolic area
-area = side^2
+symbolic area = side^2
 ```
 
 * **Quiet symbolic values** – similar to symbolic, but it keeps the formula always hidden
 
 ```rs
-quiet volume
-volume = side^3
+quiet volume = side^3
 ```
 
 ### 2. Operators
@@ -238,6 +237,9 @@ import "server.sk" as server
   * ```os```
   * ```fs``` (i.e. the file system library)
   * ```time```
+  * ```string```
+  * ```http```
+  * ```json```
   * ```units``` special case, look at point 9
 
 > Please consider taking a look to the docs for more information: [documentation](https://sk.aloyak.dev/docs)
@@ -253,7 +255,7 @@ import "server.sk" as server
 
 ### 9. Units!
 
-Although not fully implemented, SK will support the usage of units for any variable, This does only work if imported the special ```units``` library
+SK supports the usage of units for any variable, This does only work if imported the special ```units``` library. In case that you want to use a unit that is not defined [here](https://github.com/aloyak/SK/blob/main/interpreter/src/libs/units.rs), you can define your own with ```units.define("units", 1m)``` 
 
 ```rs
 import units
