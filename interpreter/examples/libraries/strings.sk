@@ -14,3 +14,5 @@ for i in [0..text.len() - 1] {
     print(text[i])
 }
 
+// not in string lib but useful
+// "Hello!".len() // returns 6
