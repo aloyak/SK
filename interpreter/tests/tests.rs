@@ -1,4 +1,5 @@
 use sk_lang::SKInterpreter;
+use sk_lang::core::units::Unit;
 use sk_lang::core::value::Value;
 
 #[test]
@@ -166,6 +167,30 @@ fn evals_arrays() {
     assert_eq!(result2, Value::Number(3.0));
     assert_eq!(result3, Value::Number(20.0));
     assert_eq!(result4, Value::Number(0.0));
+}
+
+#[test]
+fn evals_units() {
+    let mut interpreter = SKInterpreter::new();
+    let result1 = interpreter
+        .execute_string("import units\nlet speed = 60 m/s\nspeed".to_string())
+        .expect("execution should succeed");
+
+    let result2 = interpreter
+        .execute_string("import units\nlet time = 2 s\ntime".to_string())
+        .expect("execution should succeed");
+
+    let result3 = interpreter
+        .execute_string("import units\nlet distance = [0..1] km\ndistance".to_string())
+        .expect("execution should succeed");
+
+    let ms_unit = Unit::base("m").div(&Unit::base("s"));
+    let s_unit = Unit::base("s");
+    let km_unit = Unit::base("m");
+
+    assert_eq!(result1, Value::Quantity { value: Box::new(Value::Number(60.0)), unit: ms_unit });
+    assert_eq!(result2, Value::Quantity { value: Box::new(Value::Number(2.0)), unit: s_unit });
+    assert_eq!(result3, Value::Quantity { value: Box::new(Value::Interval(0.0, 1000.0)), unit: km_unit });
 }
 
 #[test]
