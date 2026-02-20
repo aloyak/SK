@@ -55,7 +55,7 @@ SK supports several kinds of values:
 let number = 3
 let string = "hello!"
 let boolean = true
-let arr = [1, 2, 3]
+let array = [1, 2, 3]
 ```
 
 * **Intervals** – ranges of possible numeric values:
@@ -223,7 +223,7 @@ for i in [0..map.len()-1] { // Uses an interval as a range
 
 * SK features a multiple file import system for better organization and scalability
 
-```rs
+```py
 import "utils.sk" as utils
 import "server.sk" as server 
 ```
