@@ -1,5 +1,16 @@
 import http
+import json
 
-// NOT IMPLEMENTED!!
+// Get Pikachu data from PokeAPI
+let id = 25
 
-// pokeapi (pikachu): https://pokeapi.co/api/v2/pokemon/25 
+let url = "https://pokeapi.co/api/v2/pokemon/" + str(id)
+let response = http.get(url)
+
+let data = json.parse(response)
+
+for pair in data {
+    if pair[0] == "name" {
+        print(pair[1], 'is pokemon with id', id)
+    }
+} 

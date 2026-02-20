@@ -6,6 +6,7 @@ pub mod time;
 pub mod units;
 pub mod string;
 pub mod http;
+pub mod json;
 
 use crate::evaluator::env::Environment;
 use std::collections::HashMap;
@@ -25,6 +26,7 @@ pub fn get_library_registry() -> HashMap<String, LibRegisterFn> {
 
     registry.insert("string".to_string(), crate::libs::string::register);
     registry.insert("http".to_string(), crate::libs::http::register);
+    registry.insert("json".to_string(), crate::libs::json::register);
     
     registry
 }
