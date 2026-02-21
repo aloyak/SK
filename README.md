@@ -302,10 +302,11 @@ let period = 50 s
 
 SK has a language support extension for Visual Studio Code that includes small refinements to make working with SK easier.
 
-* Download the latest version in [here](https://github.com/aloyak/SK/releases/latest) or build the extension yourself inside ```extensions/vscode``` with:
+* **Option 1 (Recommended)**: Install directly on VSCode, going to extensions and searching for ```SK Programming Language Support```
+
+* Option 2: Download the latest version in [here](https://github.com/aloyak/SK/releases/latest) or build the extension yourself inside ```extensions/vscode``` with:
 
 ```sh
-cd extensions/vscode/
 vsce package
 ```
 

@@ -19,4 +19,4 @@ Consider contributing to the interpreter!
 
 ### VS Code Extension
 
-In order to make working with SK a lot easier, consider installing the VS Code extension, download the extension (```.vsix``` file) at the [releases page](https://github.com/aloyak/SK/releases/latest), More information in Start/Installation.
+In order to make working with SK a lot easier, consider installing the VS Code extension by searching ```SK Programming Language Support``` or installing directly the ```.vsix``` file from the [latest release](https://github.com/aloyak/SK/releases/latest).
