@@ -86,7 +86,7 @@ const Basics = ({ theme }) => {
                   <span className="text-white">•</span> Loops
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
-                  <span className="text-white">•</span> Special Conditionals
+                  <span className="text-white">•</span> Special Conditionals & Match Statements
                 </li>
                 <li className="text-slate-500 text-sm font-medium flex gap-2">
                   <span className="text-white">•</span> Math, Random, Os, FileSystem and Time Libraries
