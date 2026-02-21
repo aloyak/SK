@@ -2,7 +2,7 @@ import math
 import time
 
 // Please see "libraries/simplelib.sk" for the rest of the example
-import "simplelib.sk" as mylib
+import "examples/libraries/simplelib.sk" as mylib
 
 // debugging timer
 let timer = time.startTimer() // returns timer's ID, starting from 0

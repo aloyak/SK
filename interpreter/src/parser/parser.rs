@@ -55,6 +55,10 @@ impl Parser {
                 self.advance();
                 self.let_declaration()
             }
+            Token::Match => {
+                self.advance();
+                self.match_statement()
+            }
             Token::Symbolic => {
                 self.advance();
                 self.symbolic_declaration(false)
@@ -180,6 +184,30 @@ impl Parser {
         })
     }
 
+    fn match_statement(&mut self) -> Result<Stmt, Error> {
+        let value = self.expression()?;
+        self.skip_newlines();
+        self.consume(Token::LBrace, "Expect '{' before match body")?;
+
+        let mut arms = Vec::new();
+        while !self.check(&Token::RBrace) && !self.is_at_end() {
+            if self.match_token(Token::NewLine) {
+                continue;
+            }
+            let pattern = if self.match_token(Token::Any) {
+                Expr::Literal { value: self.previous().clone() }
+            } else {
+                self.expression()?
+            };
+            self.consume(Token::FatArrow, "Expect '=>' after match pattern")?;
+            let body = self.statement()?;
+            arms.push((pattern, body));
+        }
+
+        self.consume(Token::RBrace, "Expect '}' after match body")?;
+        Ok(Stmt::Match { value, arms })
+    }
+
     fn symbolic_declaration(&mut self, is_quiet: bool) -> Result<Stmt, Error> {
         let name = self.consume_identifier("Expect variable name")?;
         self.consume(Token::Assign, "Expect '=' after name")?;
@@ -239,6 +267,11 @@ impl Parser {
 
         if self.match_token(Token::LBrace) {
             return Ok(Stmt::Block { statements: self.block()? });
+        }
+
+        if self.match_token(Token::Panic) {
+            self.end_stmt()?;
+            return Ok(Stmt::Panic);
         }
         
         if self.peek_type(Token::Identifier(String::new()))

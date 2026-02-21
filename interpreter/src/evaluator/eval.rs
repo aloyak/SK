@@ -242,6 +242,27 @@ impl Evaluator {
                 self.env.borrow_mut().define(name.token_to_string(), function);
                 Ok(Value::None)
             }
+            Stmt::Match { value, arms } => {
+                let value = self.eval_expr(value)?;
+                for (pattern, body) in arms {
+                    if matches!(
+                        pattern,
+                        Expr::Literal {
+                            value: TokenSpan {
+                                token: Token::Any,
+                                ..
+                            },
+                        }
+                    ) {
+                        return self.eval_stmt(body);
+                    }
+
+                    if self.eval_expr(pattern)? == value {
+                        return self.eval_stmt(body);
+                    }
+                }
+                Ok(Value::None)
+            }
             Stmt::Loop { body } => {
                 if self.safe_mode {
                     return Err(self.report_error(

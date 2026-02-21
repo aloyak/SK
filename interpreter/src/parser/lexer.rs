@@ -28,6 +28,8 @@ pub enum Token {
     None,
     Panic,
     Function,
+    Match,
+    Any,
     Comma,
     Dot,
 
@@ -40,6 +42,7 @@ pub enum Token {
     // Operators & Symbols
     Assign,
     Arrow,
+    FatArrow,
     Plus,
     Minus,
     Star,
@@ -108,6 +111,7 @@ impl TokenSpan {
             Token::False => 5,
             Token::Partial => 7,
             Token::None => 4,
+            Token::Any => 3,
             _ => 1,
         }
     }
@@ -251,6 +255,7 @@ impl Lexer {
 
             '=' => {
                 if self.match_char('=') { Ok(Some(Token::EqualEqual)) } 
+                else if self.match_char('>') { Ok(Some(Token::FatArrow)) }
                 else { Ok(Some(Token::Assign)) }
             }
             '+' => {
@@ -345,6 +350,8 @@ impl Lexer {
             "panic!" => Token::Panic, // The statement
             "panic" => Token::Panic,  // The policy
             "fn" => Token::Function,
+            "match" => Token::Match,
+            "any" => Token::Any,
             "loop" => Token::Loop,
             "break" => Token::Break,
             "continue" => Token::Continue,

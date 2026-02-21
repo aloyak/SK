@@ -123,6 +123,11 @@ pub enum Stmt {
         is_public: bool
     },
 
+    Match {
+        value: Expr,
+        arms: Vec<(Expr, Stmt)>,
+    },
+
     Loop {
         body: Vec<Stmt>,
     },

@@ -1,0 +1,12 @@
+let num = 2
+
+match num {
+    1 => panic!
+    2 => print("YAY!")
+    3 => print("NAY!")
+
+    any => {
+        // it also allows code blocks!
+        print("Number is not in my set!")
+    }
+}
