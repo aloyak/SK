@@ -1,9 +1,11 @@
 {
   "name": "sk-lang",
-  "displayName": "SK-Lang",
+  "displayName": "SK Language Support",
   "description": "The SK Programming Language VSCode Extension!",
-  "version": "0.5.7",
+  "version": "0.6.0",
   "publisher": "aloyak",
+  "license": "MIT",
+  "icon": "./skicon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/aloyak/SK"

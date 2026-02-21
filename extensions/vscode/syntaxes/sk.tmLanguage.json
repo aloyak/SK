@@ -18,11 +18,11 @@
       "patterns": [
         {
           "name": "keyword.control.sk",
-          "match": "\\b(if|elif|else|fn|let|const|symbolic|quiet|unknown|import|as|pub|loop|for|in)\\b"
+          "match": "\\b(match|any|if|elif|else|fn|let|const|symbolic|quiet|unknown|import|as|pub|loop|for|in)\\b"
         },
         {
           "name": "support.function.builtin.sk",
-          "match": "\\b(print|input|panic!|continue|break|write)\\b"
+          "match": "\\b(print|input|panic!|continue|break|write|num|str)\\b"
         },
 		{
           "name": "keyword.operator.sk",

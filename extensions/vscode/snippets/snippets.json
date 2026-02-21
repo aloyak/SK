@@ -43,5 +43,16 @@
       "}"
     ],
     "description": "Create a for loop"
+  },
+  "Match Statement": {
+    "prefix": "match",
+    "body": [
+      "match ${1:value} {",
+      "\t${2:pattern} => {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Create a match statement"
   }
 }
