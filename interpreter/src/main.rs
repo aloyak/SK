@@ -3,13 +3,13 @@ use std::env;
 use std::path::{Path, PathBuf};
 use std::process;
 
-use rustyline::DefaultEditor;
-
 const NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 use sk_lang::SKInterpreter;
 use sk_lang::core::value::Value;
+
+mod repl;
 
 fn run(path: &Path, safe_mode: bool) {
     let mut interpreter = SKInterpreter::new_with_options(safe_mode);
@@ -30,63 +30,6 @@ fn run(path: &Path, safe_mode: bool) {
     }
 }
 
-fn run_repl(safe_mode: bool) {
-    let mut interpreter = SKInterpreter::new_with_options(safe_mode);
-    let mut rl = DefaultEditor::new().expect("Failed to create editor");
-    
-    println!("{} REPL ({}). Type 'exit!' to quit and 'clear!' to clear the screen.", NAME, VERSION);
-
-    loop {
-        let readline = rl.readline(">> ");
-        
-        match readline {
-            Ok(line) => {
-                let source = line.trim();
-                
-                if source == "exit!" {
-                    break;
-                } else if source == "clear!" {
-                    #[cfg(windows)] // Why does windows allways have to be different :(
-                    {
-                        let _ = process::Command::new("cmd")
-                            .arg("/C")
-                            .arg("cls")
-                            .status();
-                    }
-                    #[cfg(not(windows))]
-                    {
-                        let _ = process::Command::new("clear").status();
-                    }
-                    continue;
-                }
-                
-                if source.is_empty() {
-                    continue;
-                }
-
-                let _ = rl.add_history_entry(source);
-
-
-                match interpreter.execute_string(source.to_string()) {
-                    Ok(value) => {
-                        if value != Value::None {
-                            println!("{}", value);
-                        }
-                        for warning in interpreter.take_warnings() {
-                            eprintln!("{}", warning);
-                        }
-                    }
-                    Err(e) => eprintln!("{}", e),
-                }
-            },
-            Err(err) => {
-                println!("Error: {:?}", err);
-                break;
-            }
-        }
-    }
-}
-
 fn check(path: &Path) -> Result<(), String> {
     if !path.exists() {
         return Err(format!("Couldn't find file: '{}'", path.display()));
@@ -100,7 +43,7 @@ fn check(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn create_proj(name: String) {
+fn create_project(name: String) {
     let mut path = PathBuf::from(&name);
     if path.exists() {
         eprintln!("Error: A file or directory with the name '{}' already exists!", name);
@@ -117,23 +60,23 @@ fn create_proj(name: String) {
 
 fn main() {
     let raw_args: Vec<String> = env::args().skip(1).collect();
-    let safe_mode = raw_args.iter().any(|arg| arg == "--safe");
+    let safe = raw_args.iter().any(|arg| arg == "--safe");
     let args: Vec<String> = raw_args
         .into_iter()
         .filter(|arg| arg != "--safe")
         .collect();
 
     if args.is_empty() {
-        run_repl(safe_mode);
+        repl::run_repl(safe, NAME, VERSION);
         return;
     }
 
-    if args.contains(&"--version".to_string()) {
+    if args.contains(&"--version".to_string()) || args.contains(&"-v".to_string()) {
         println!("{} v{}", NAME, VERSION);
         process::exit(0);
     }
 
-    if args.contains(&"--help".to_string()) {
+    if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
         help();
         process::exit(0);
     }
@@ -153,7 +96,7 @@ fn main() {
             io::stdin().read_line(&mut name).expect("Failed to read line");
             let name = name.trim().to_string();
 
-            create_proj(name);
+            create_project(name);
 
             process::exit(0);
         }
@@ -167,12 +110,12 @@ fn main() {
         process::exit(1)
     }
 
-    run(&path, safe_mode);
+    run(&path, safe);
 }
 
 fn help() {
     println!("{} - {}", NAME, VERSION);
-    println!("usage: {} : starts a repl interpreter.", NAME);
+    println!("usage: {} : starts a REPL interpreter.", NAME);
     println!("       {} <filename> : runs the file at the given path.", NAME);
     println!("       {} --project <path> : runs 'main.sk' at the given path.", NAME);
     println!("       {} --project new : creates a new project.", NAME);
