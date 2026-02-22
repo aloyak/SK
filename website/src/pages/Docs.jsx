@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Hash, ChevronRight, FileText, AlertCircle, Folder, ChevronDown } from 'lucide-react';
 import { Marked } from 'marked';
 import { markedHighlight } from "marked-highlight";
@@ -18,7 +19,8 @@ const markedInstance = new Marked(
 const markdownFiles = import.meta.glob('/docs/**/*.md', { query: '?raw', import: 'default' });
 
 const Docs = ({ theme, setPage }) => {
-  const [activePath, setActivePath] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [displayTitle, setDisplayTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +53,14 @@ const Docs = ({ theme, setPage }) => {
     );
   }, []);
 
+  const activePath = useMemo(() => {
+    const subPath = location.pathname.replace('/docs', '');
+    if (!subPath || subPath === '/') {
+      return Object.values(categories)[0]?.[0] || '';
+    }
+    return `/docs${subPath}.md`;
+  }, [location.pathname, categories]);
+
   useEffect(() => {
     const handleLinks = (e) => {
       const link = e.target.closest('a');
@@ -65,14 +75,10 @@ const Docs = ({ theme, setPage }) => {
   }, [setPage]);
 
   useEffect(() => {
-    if (!activePath) {
-      const firstFile = Object.values(categories)[0]?.[0];
-      if (firstFile) setActivePath(firstFile);
+    if (!activePath || !markdownFiles[activePath]) {
+      setIsLoading(false);
+      return;
     }
-  }, [categories, activePath]);
-
-  useEffect(() => {
-    if (!activePath || !markdownFiles[activePath]) return;
 
     setIsLoading(true);
     markdownFiles[activePath]()
@@ -84,6 +90,11 @@ const Docs = ({ theme, setPage }) => {
       .catch(() => setContent(''))
       .finally(() => setIsLoading(false));
   }, [activePath]);
+
+  const handleFileSelect = (path) => {
+    const urlPath = path.replace('/docs', '').replace('.md', '');
+    navigate(`/docs${urlPath}`);
+  };
 
   if (!theme) return null;
 
@@ -112,7 +123,7 @@ const Docs = ({ theme, setPage }) => {
                       {paths.map((path) => (
                         <button
                           key={path}
-                          onClick={() => setActivePath(path)}
+                          onClick={() => handleFileSelect(path)}
                           className={`cursor-pointer flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group ${
                             activePath === path ? 'bg-white text-black font-bold shadow-lg scale-[1.02]' : 'text-slate-400 hover:text-white hover:bg-white/5'
                           }`}

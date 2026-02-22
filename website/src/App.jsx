@@ -59,7 +59,7 @@ print("Rate this language from " + str(variable) + "!")
   const t = theme;
 
   const currentPage = useMemo(() => {
-    return location.pathname.replace('/', '') || 'about';
+    return location.pathname.split('/')[1] || 'about';
   }, [location.pathname]);
 
   const setPage = (nextPage) => {
@@ -276,7 +276,7 @@ print("Rate this language from " + str(variable) + "!")
       <Routes>
         <Route path="/about" element={<About theme={t} setPage={setPage} />} />
         <Route path="/ide" element={<IDE {...{code, setCode, output, command, outputWidth, startResizing, handleEditorWillMount, theme: t}} />} />
-        <Route path="/docs" element={<Docs theme={t} setPage={setPage} />} />
+        <Route path="/docs/*" element={<Docs theme={t} setPage={setPage} />} />
         <Route path="/basics" element={<Basics theme={t} />} />
         <Route path="/" element={<Navigate to="/about" replace />} />
         <Route path="*" element={<Navigate to="/about" replace />} />
