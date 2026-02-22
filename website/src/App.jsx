@@ -148,7 +148,7 @@ print("Rate this language from " + str(variable) + "!")
       tokenizer: {
       root: [
         [/\/\*/, { token: 'comment', next: '@comment' }],
-        [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|for|in|break|continue|merge|panic|strict|match|any)\b/, 'keyword'],
+        [/\b(symbolic|let|unknown|quiet|fn|return|if|elif|else|import|as|pub|loop|for|in|break|continue|merge|panic|strict|match|any|try|catch)\b/, 'keyword'],
         [/\b(certain|possible|impossible|known)\b/, 'builtins'],
         [/panic!/, 'builtins'],
         [/\b(print|write|input|str|num|kind|resolve)\b/, 'builtins'],
