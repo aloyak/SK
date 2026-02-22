@@ -11,7 +11,7 @@ pub fn run_repl(safe_mode: bool, name: &str, version: &str) {
     let mut buffer = String::new();
 
     println!(
-        "{} REPL ({}).\n - Type 'exit!' to quit\n - 'clear!' to clear the screen\n - 'reset!' to clear the buffer.",
+        "{} REPL ({})\n - Type 'exit!' to quit\n - 'clear!' to clear the screen\n - 'reset!' to clear the buffer.",
         name, version
     );
 

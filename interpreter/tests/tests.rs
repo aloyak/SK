@@ -1,6 +1,6 @@
 use sk_lang::SKInterpreter;
 use sk_lang::core::units::Unit;
-use sk_lang::core::value::Value;
+use sk_lang::core::value::{SKBool, Value};
 
 #[test]
 fn evals_basic_expression() {
@@ -194,10 +194,28 @@ fn evals_units() {
 }
 
 #[test]
+fn evals_match() {
+    let mut interpreter = SKInterpreter::new();
+    let result = interpreter
+        .execute_string("match 2 { 1 => false\n2 => true\nany => partial }".to_string())
+        .expect("execution should succeed");
+    assert_eq!(result, Value::Bool(SKBool::True));
+}
+
+#[test]
+fn evals_try_catch() {
+    let mut interpreter = SKInterpreter::new();
+    let result = interpreter
+        .execute_string("unknown result\ntry { panic! } catch { result = 'caught' }\nresult".to_string())
+        .expect("execution should succeed");
+    assert_eq!(result, Value::String("caught".to_string()));
+}
+
+#[test]
 fn library_import() {
     let mut interpreter = SKInterpreter::new();
     let result = interpreter
-        .execute_string("import math\nmath.sqrt(16)".to_string())
+        .execute_string("import math as mt\nmt.sqrt(16)".to_string())
         .expect("execution should succeed");
 
     assert_eq!(result, Value::Number(4.0));
