@@ -24,7 +24,7 @@ const Docs = ({ theme, setPage }) => {
   const [content, setContent] = useState('');
   const [displayTitle, setDisplayTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState(new Set(['Start']));
+  const [expandedCategories, setExpandedCategories] = useState(new Set(['start']));
 
   const formatFileName = (path) => path.split('/').pop().replace('.md', '').replace(/[-_]/g, ' ');
 
@@ -48,7 +48,7 @@ const Docs = ({ theme, setPage }) => {
 
     return Object.fromEntries(
       Object.entries(groups).sort(([a], [b]) => 
-        a === 'Start' ? -1 : b === 'Start' ? 1 : a.localeCompare(b)
+        a === 'start' ? -1 : b === 'start' ? 1 : a.localeCompare(b)
       )
     );
   }, []);
