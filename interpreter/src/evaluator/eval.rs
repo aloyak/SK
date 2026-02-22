@@ -237,6 +237,12 @@ impl Evaluator {
             Stmt::If { condition, policy, then_branch, elif_branch, else_branch } => {
                 self.eval_if_chain(condition, *then_branch, &elif_branch, &else_branch, policy)
             }
+            Stmt::TryCatch { try_block, catch_block } => {
+                match self.eval_stmt(*try_block) {
+                    Ok(val) => Ok(val),
+                    Err(_) => self.eval_stmt(*catch_block.clone()),
+                }
+            }
             Stmt::Function { name, params, body, is_public } => {
                 let function = Value::Function(Function { params, body, closure: self.env.clone(), is_public });
                 self.env.borrow_mut().define(name.token_to_string(), function);

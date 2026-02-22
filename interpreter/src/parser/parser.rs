@@ -97,6 +97,10 @@ impl Parser {
                 self.end_stmt()?;
                 Ok(Stmt::Continue)
             }
+            Token::Try => {
+                self.advance();
+                self.try_catch_statement()
+            }
             _ => self.statement(),
         }
     }
@@ -372,6 +376,22 @@ impl Parser {
         Ok(Stmt::Panic)
     }
 
+    fn try_catch_statement(&mut self) -> Result<Stmt, Error> {
+        // one try one catch, and no arguments to the catch block for now
+        self.skip_newlines();
+        self.consume(Token::LBrace, "Expect '{' before try block")?;
+        
+        let try_block = Box::new(Stmt::Block { statements: self.block()? }); 
+        self.skip_newlines();
+
+        self.consume(Token::Catch, "Expect 'catch' after try block")?;
+        self.skip_newlines();
+
+        self.consume(Token::LBrace, "Expect '{' before catch block")?;
+        let catch_block = Box::new(Stmt::Block { statements: self.block()? });
+
+        Ok(Stmt::TryCatch { try_block, catch_block })
+    }
 
     pub fn expression(&mut self) -> Result<Expr, Error> {
         self.logic_or()

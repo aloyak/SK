@@ -1,0 +1,9 @@
+let mySet = [-10..10]
+
+try {
+    for i in mySet {
+        print(1/i) // division by 0
+    }
+} catch {
+    print("ERROR!!")
+}

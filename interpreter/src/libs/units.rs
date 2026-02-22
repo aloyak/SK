@@ -71,6 +71,16 @@ pub fn register(env: &mut Environment) {
 	env.define("g".into(), scaled_unit_value("kg", 0.001));
 	env.define("mg".into(), scaled_unit_value("kg", 0.000001));
 
+	// Temperature scales
+	env.define("dC".into(), Value::Quantity {
+		value: Box::new(Value::Number(1.0)),
+		unit: Unit::base("dC"),
+	});
+	env.define("dK".into(), Value::Quantity {
+		value: Box::new(Value::Number(1.0)),
+		unit: Unit::base("dK"),
+	});
+
 	env.define("define".into(), Value::NativeFn(define));
 }
 

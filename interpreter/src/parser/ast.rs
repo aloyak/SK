@@ -128,6 +128,11 @@ pub enum Stmt {
         arms: Vec<(Expr, Stmt)>,
     },
 
+    TryCatch {
+        try_block: Box<Stmt>,
+        catch_block: Box<Stmt>,
+    },
+
     Loop {
         body: Vec<Stmt>,
     },

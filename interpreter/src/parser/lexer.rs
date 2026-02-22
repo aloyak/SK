@@ -39,6 +39,10 @@ pub enum Token {
     For,
     In,
 
+    // Error handling
+    Try,
+    Catch,
+
     // Operators & Symbols
     Assign,
     Arrow,
@@ -361,6 +365,8 @@ impl Lexer {
             "true" => Token::True,
             "false" => Token::False,
             "partial" => Token::Partial,
+            "try" => Token::Try,
+            "catch" => Token::Catch,
             _ => Token::Identifier(text),
         }
     }
