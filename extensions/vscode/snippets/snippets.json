@@ -54,5 +54,16 @@
       "}"
     ],
     "description": "Create a match statement"
+  },
+  "Try-Catch Statement": {
+    "prefix": "try",
+    "body": [
+      "try {",
+      "\t$0",
+      "} catch {",
+      "\t",
+      "}"
+    ],
+    "description": "Create a try-catch statement"
   }
 }
