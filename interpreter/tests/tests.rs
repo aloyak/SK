@@ -48,6 +48,24 @@ fn evals_postfixes() {
 }
 
 #[test]
+fn evals_assings() {
+    let mut interpreter = SKInterpreter::new();
+    let result1 = interpreter
+        .execute_string("let x = 10\nx += 5\nx".to_string())
+        .expect("execution should succeed");
+    let result2 = interpreter
+        .execute_string("let x = 10\nx *= 5\nx".to_string())
+        .expect("execution should succeed");
+    let result3 = interpreter
+        .execute_string("let x = 10\nx /= 2\nx".to_string())
+        .expect("execution should succeed");
+
+    assert_eq!(result1, Value::Number(15.0));
+    assert_eq!(result2, Value::Number(50.0));
+    assert_eq!(result3, Value::Number(5.0));
+}
+
+#[test]
 fn evals_if_expression() {
     let mut interpreter = SKInterpreter::new();
     let result = interpreter

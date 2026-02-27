@@ -81,8 +81,11 @@ pub enum Token {
 
     Increment, // ++
     Decrement, // --
+
     AdditionAssign, // +=
     SubtractionAssign, // -=
+    MultiplicationAssign, // *=
+    DivisionAssign, // /=
 
     NewLine,
     EOF,
@@ -211,7 +214,6 @@ impl Lexer {
             '{' => Ok(Some(Token::LBrace)),
             '}' => Ok(Some(Token::RBrace)),
             ',' => Ok(Some(Token::Comma)),
-            '*' => Ok(Some(Token::Star)),
             '%' => Ok(Some(Token::Modulo)),
             '^' => Ok(Some(Token::Caret)),
 
@@ -237,6 +239,10 @@ impl Lexer {
                     self.advance();
                     self.advance(); 
                     Ok(None)
+                }
+                '=' => {
+                    self.advance();
+                    Ok(Some(Token::DivisionAssign))
                 }
                 _ => Ok(Some(Token::Slash)),
             }
@@ -267,6 +273,10 @@ impl Lexer {
                 else if self.match_char('=') { Ok(Some(Token::AdditionAssign)) }
                 else { Ok(Some(Token::Plus)) }
             },
+            '*' => {
+                if self.match_char('=') { Ok(Some(Token::MultiplicationAssign)) }
+                else { Ok(Some(Token::Star)) }
+            }
             '-' => {
                 if self.match_char('>') { Ok(Some(Token::Arrow)) } 
                 else if self.match_char('-') { Ok(Some(Token::Decrement)) }

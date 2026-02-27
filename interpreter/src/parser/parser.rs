@@ -281,7 +281,9 @@ impl Parser {
         if self.peek_type(Token::Identifier(String::new()))
             && (self.peek_next_type(Token::Assign)
                 || self.peek_next_type(Token::AdditionAssign)
-                || self.peek_next_type(Token::SubtractionAssign))
+                || self.peek_next_type(Token::SubtractionAssign)
+                || self.peek_next_type(Token::MultiplicationAssign)
+                || self.peek_next_type(Token::DivisionAssign))
         {
             let name = self.advance().clone();
             let op = self.advance().clone(); // consume assignment operator
@@ -289,12 +291,16 @@ impl Parser {
 
             let value = match op.token {
                 Token::Assign => rhs,
-                Token::AdditionAssign | Token::SubtractionAssign => {
+                Token::AdditionAssign | Token::SubtractionAssign | Token::MultiplicationAssign | Token::DivisionAssign => {
                     let operator = TokenSpan {
                         token: if matches!(op.token, Token::AdditionAssign) {
                             Token::Plus
-                        } else {
+                        } else if matches!(op.token, Token::SubtractionAssign) {
                             Token::Minus
+                        } else if matches!(op.token, Token::MultiplicationAssign) {
+                            Token::Star
+                        } else {
+                            Token::Slash
                         },
                         line: op.line,
                         column: op.column,
