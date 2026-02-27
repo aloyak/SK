@@ -37,7 +37,7 @@ let number_from_string = num(string) // or num("42")
 ### Concatenation
 Strings support concatenation using the '+' operator
 ```rs
-let name = "John SK"
+let name = "SK"
 print("Hello, " + name + "!")
 ```
 
@@ -60,7 +60,7 @@ It is allowed to use different type variables inside arrays, including arrays th
 let arr = [-21, "Hello!", [-1..1], true, [6, 7, 8]]
 ```
 
-### Increment and Decrement Operators
+### Increment/Decrement & Assing Operators
 
 Just like in C++ you can use the Increment and Decrement Operators
 
@@ -73,6 +73,9 @@ n-- // 23
 // Also works:
 n += 1
 n -= 1
+
+n *= 1
+n /= 1
 ```
 
 ### Units Library
