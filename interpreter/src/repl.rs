@@ -17,38 +17,55 @@ const COLOR_RESET: &str = "\x1b[0m";
 impl Highlighter for RLHelper {
     fn highlight<'l>(&self, line: &'l str, _pos: usize) -> Cow<'l, str> {
         let mut output = String::new();
-        
-        let words = line.split_inclusive(|c: char| {
-            !c.is_alphanumeric() && c != '_' && c != '!' && c != '.'
-        });
+        let mut chars = line.chars().peekable();
 
-        for word in words {
-            if word == ".." {
-                output.push_str(COLOR_KEYWORD);
-                output.push_str(word);
+        while let Some(c) = chars.next() {
+            if c == '"' || c == '\'' {
+                output.push_str(COLOR_STRING);
+                output.push(c);
+                while let Some(&_next) = chars.peek() {
+                    let next_char = chars.next().unwrap();
+                    output.push(next_char);
+                    if next_char == c { break; }
+                }
                 output.push_str(COLOR_RESET);
-                continue;
+            } else if c.is_ascii_digit() {
+                output.push_str(COLOR_NUMBER);
+                output.push(c);
+                while let Some(&next) = chars.peek() {
+                    if next.is_ascii_digit() || next == '.' {
+                        if next == '.' {
+                            let mut lookahead = chars.clone();
+                            lookahead.next();
+                            if lookahead.peek() == Some(&'.') { break; }
+                        }
+                        output.push(chars.next().unwrap());
+                    } else { break; }
+                }
+                output.push_str(COLOR_RESET);
+            } else if c.is_alphabetic() || c == '_' {
+                let mut word = String::from(c);
+                while let Some(&next) = chars.peek() {
+                    if next.is_alphanumeric() || next == '_' || next == '!' {
+                        word.push(chars.next().unwrap());
+                    } else { break; }
+                }
+                let color = match word.as_str() {
+                    "let" | "fn" | "if" | "else" | "elif" | "match" | "loop" | "for" | "in" | "import" | "as" | "pub" | "symbolic" | "quiet" | "panic!" | "panic" | "try" | "catch" | "strict" | "merge" | "unknown" | "any" => COLOR_KEYWORD,
+                    "true" | "false" | "none" | "partial" => COLOR_LITERAL,
+                    _ => COLOR_RESET,
+                };
+                output.push_str(color);
+                output.push_str(&word);
+                output.push_str(COLOR_RESET);
+            } else if c == '.' && chars.peek() == Some(&'.') {
+                output.push_str(COLOR_KEYWORD);
+                output.push('.');
+                output.push(chars.next().unwrap());
+                output.push_str(COLOR_RESET);
+            } else {
+                output.push(c);
             }
-
-            let trimmed = word.trim_matches(|c: char| !c.is_alphanumeric() && c != '_' && c != '!');
-            
-            let color = match trimmed { // Not very proud of this, need to find a better way
-                "let" | "fn" | "if" | "else" | "elif" | "match" | "loop" | "for" | "in" | "import" | "as" | "pub" | "symbolic" | "quiet" | "panic!" | "panic" | "try" | "catch" | "strict" | "merge" | "unknown" | "any" => COLOR_KEYWORD,
-                "true" | "false" | "none" | "partial" => COLOR_LITERAL,
-                _ if !trimmed.is_empty() && trimmed.chars().all(|c| c.is_ascii_digit() || c == '.') => {
-                    if trimmed.contains("..") {
-                        COLOR_RESET
-                    } else {
-                        COLOR_NUMBER
-                    }
-                },
-                _ if word.contains('"') || word.contains('\'') => COLOR_STRING,
-                _ => COLOR_RESET,
-            };
-
-            output.push_str(color);
-            output.push_str(word);
-            output.push_str(COLOR_RESET);
         }
         Cow::Owned(output)
     }
