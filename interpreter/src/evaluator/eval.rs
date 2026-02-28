@@ -270,16 +270,6 @@ impl Evaluator {
                 Ok(Value::None)
             }
             Stmt::Loop { body } => {
-                if self.safe_mode {
-                    return Err(self.report_error(
-                        TokenSpan {
-                            token: Token::Loop,
-                            line: 0,
-                            column: 0,
-                        },
-                        "Loops are disabled in --safe mode. Download the SK interpreter!",
-                    ));
-                }
                 loop {
                     self.control_flow = ControlFlow::None;
                     let new_env = Environment::new_enclosed(self.env.clone());

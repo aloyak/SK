@@ -40,7 +40,6 @@ The SK interpreter also supports working with projects rather than just files
 To make the Web IDE safe, The ```--safe``` flag was added, this removes the following features of the language:
 
 * ```os.command()```, disabled so no arbitrary code could be ran and other obvious server attacks
-* ```loops```, disabled as they would cause a memory leak that would freeze the website entirely
 * All the functions of the file system (```fs```) library.
 
 > If you must use these features, download the interpreter! See more information at Start/Installation
